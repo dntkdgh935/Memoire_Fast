@@ -1,11 +1,28 @@
 import requests
+import os
 from app.core.config import settings
+from runwayml import RunwayML, TaskFailedError
 
-def generate_background(prompt: str) -> str:
-    """Runway Gen-2 API 호출 → 영상 URL 리턴"""
-    resp = requests.post(
-        "https://api.runwayml.com/v1/videos",
-        headers={"Authorization": f"Bearer {settings.RUNWAY_API_KEY}"},
-        json={"prompt": prompt}
-    )
-    return resp.json()["video_url"]
+client = RunwayML()
+
+
+# Create a new image-to-video task using the "gen4_turbo" model
+
+def generate_video():
+  try:
+    task = client.image_to_video.create(
+      model='Gen-3 Alpha Turbo',
+      # Point this at your own image file
+      prompt_image='https://example.com/image.jpg',
+      prompt_text='Generate a video',
+      ratio='1280:720',
+      duration=5,
+    ).wait_for_task_output()
+
+    print('Task complete:', task)
+  except TaskFailedError as e:
+    print('The video failed to generate.')
+    print(e.task_details)
+
+
+
