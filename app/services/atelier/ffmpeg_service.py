@@ -23,7 +23,6 @@ def _download_if_url(src: str, dest: Path) -> Path:
 
 def merge_assets(
     video_url: str,
-    music_url: str,
     tts_path: str | None,
     output_path: str = "final.mp4"
 ) -> str:
@@ -35,7 +34,6 @@ def merge_assets(
     # 1) 임시 파일 준비
     tmp_dir = Path(tempfile.mkdtemp())
     video_file = _download_if_url(video_url, tmp_dir / "video.mp4")
-    music_file = _download_if_url(music_url, tmp_dir / "music.mp3")
     # tts_path는 이미 로컬 경로라 가정. 없으면 None
     tts_file = Path(tts_path) if tts_path else None
 
@@ -47,7 +45,6 @@ def merge_assets(
         # 입력: video
         "-i", str(video_file),
         # 입력: music
-        "-i", str(music_file),
     ]
     if tts_file:
         # 입력: tts

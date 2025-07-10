@@ -25,7 +25,7 @@ def generate_tts(text: str, voice_id: str = "EXAVITQu4vr4xnSDxMaL", model_id: st
         raise
 
 if __name__ == "__main__":
-    text = "안녕하세요. 이 음성은 Eleven Labs의 TTS를 사용하여 생성되었습니다."
+    text = "안녕하세요. 반갑습니다. 저 내일 휴가 쓰고 싶어요."
     generate_tts(text)
 
 
