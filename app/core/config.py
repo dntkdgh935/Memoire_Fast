@@ -1,15 +1,15 @@
 # API 키, FFmpeg 경로 등 환경변수 로딩
+import os
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from pydantic import BaseSettings
+env_path = os.path.join(os.path.dirname(__file__), "../../.env")
 
 class Settings(BaseSettings):
-    D_ID_API_KEY: str
     RUNWAY_API_KEY: str
-    AUDIOGEN_API_KEY: str
     ELEVENLABS_API_KEY: str
+    MUBERT_API_KEY: str
     FFMPEG_PATH: str = "ffmpeg"  # 도커에 ffmpeg 설치시 기본 이름
 
-    class Config:
-        env_file = ".env"
+    model_config = SettingsConfigDict(env_file=env_path)
 
 settings = Settings()
