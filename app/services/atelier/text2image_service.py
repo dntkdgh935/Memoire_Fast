@@ -9,8 +9,9 @@ client = OpenAI(api_key=settings.openai_api_key)
 
 def generate_image(request: ImageGenerationRequest) -> ImageResultDto:
     try:
-        # 프롬프트에 스타일 적용
-        styled_prompt = f"{request.style} 스타일로 이미지 생성: {request.prompt}"
+        # 🔧 프롬프트에 스타일 적용 (원문 우선 사용, 없으면 prompt 사용)
+        base_prompt = request.originalText or request.prompt or "이미지 설명 없음"
+        styled_prompt = f"{request.style} 스타일로 이미지 생성: {base_prompt}"
 
         # DALL·E 3 이미지 생성
         response = client.images.generate(
