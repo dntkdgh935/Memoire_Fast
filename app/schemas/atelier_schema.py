@@ -46,3 +46,42 @@ class ImageResultDto(BaseModel):
     memoryType: str
     collectionId: str
     memoryOrder: int
+
+class ElevenlabsGenerationRequest(BaseModel):
+    prompt: str
+    text: str
+
+class ElevenlabsGenerationResponse(BaseModel):
+    audio_url: str
+
+
+class RunwayGenerationRequest(BaseModel):
+    image_url: str
+    prompt: str
+    tts_url: str
+
+class RunwayGenerationResponse(BaseModel):
+    video_url: str
+
+
+class OpenaiGenerationRequest(BaseModel):
+    prompt: str
+
+class OpenaiGenerationResponse(BaseModel):
+    generated_text: str
+
+
+class FfmpegGenerationRequest(BaseModel):
+    video_url: str
+    tts_url: str
+
+class FfmpegGenerationResponse(BaseModel):
+    processed_video_url: str
+
+
+class VertexGenerationRequest(BaseModel):
+    prompt: str
+    image_url: str
+
+class VertexGenerationResponse(BaseModel):
+    generated_image_url: str

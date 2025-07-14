@@ -6,7 +6,6 @@ def compose_video(
     image_url: str,
     TTS_Prompt: str,
     Video_Prompt: str,
-    music_prompt: str,
     tts_text: str,
     is_person: bool,
     use_tts: bool,

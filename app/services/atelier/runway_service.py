@@ -58,7 +58,7 @@ BASE_DIR = os.path.dirname(__file__)
 def start():
     print("▶️ start() 진입했습니다")
     image_path = os.path.join(BASE_DIR, ".jpg")
-    prompt = "저 펭귄 케릭터가 여유롭게 차와 과자를 먹는 영상 만들어줘"
+    prompt = "저 사진 안의 사람이 서럽게 우는 영상 만들어줘"
 
     print(f"image_path: {image_path} (존재: {os.path.isfile(image_path)})")
     if not os.path.isfile(image_path):
