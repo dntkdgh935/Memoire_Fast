@@ -1,36 +1,38 @@
 import os
 from openai import OpenAI
-
-from app.core.config import settings
 from app.schemas.atelier_schema import ImageGenerationRequest, ImageResultDto
+from dotenv import load_dotenv
 
-# OpenAI API 클라이언트
-client = OpenAI(api_key=settings.openai_api_key)
+load_dotenv()
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def generate_image(request: ImageGenerationRequest) -> ImageResultDto:
-    try:
-        # 🔧 프롬프트에 스타일 적용 (원문 우선 사용, 없으면 prompt 사용)
-        base_prompt = request.originalText or request.prompt or "이미지 설명 없음"
-        styled_prompt = f"{request.style} 스타일로 이미지 생성: {base_prompt}"
+def generate_image_from_dalle(request: ImageGenerationRequest) -> ImageResultDto:
+    prompt_parts = [request.prompt]
+    if request.style:
+        prompt_parts.append(f"스타일: {request.style}")
+    if hasattr(request, "option") and request.option:
+        prompt_parts.append(f"추가 요청: {request.option}")
 
-        # DALL·E 3 이미지 생성
-        response = client.images.generate(
-            model="dall-e-3",
-            prompt=styled_prompt,
-            size="1024x1024",
-            quality="standard",
-            n=1
-        )
+    final_prompt = "\n".join(prompt_parts)
 
-        image_url = response.data[0].url
+    response = client.images.generate(
+        model="dall-e-3",
+        prompt=final_prompt,
+        size="1024x1024",
+        quality="standard",
+        n=1
+    )
 
-        return ImageResultDto(
-            imageUrl=image_url,
-            style=request.style,
-            memoryType=request.memoryType,
-            collectionId=request.collectionId,
-            memoryOrder=request.memoryOrder
-        )
+    image_url = response.data[0].url
 
-    except Exception as e:
-        raise RuntimeError(f"이미지 생성 오류: {str(e)}")
+    return ImageResultDto(
+        imageUrl=image_url,
+        prompt=request.prompt,
+        title=request.title,
+        filename=None,
+        filepath=None,
+        style=request.style,
+        memoryType=request.memoryType,
+        collectionId=request.collectionId,
+        memoryOrder=request.memoryOrder
+    )

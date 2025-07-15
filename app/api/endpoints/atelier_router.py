@@ -1,8 +1,5 @@
 from fastapi import APIRouter
-from app.schemas.atelier_schema import ComposeRequest, ComposeResponse
-from app.services.atelier.ai_composition_service import compose_video
-from app.services.atelier import textgen_service
-from app.api.endpoints import (
+from app import (
     text2text_router,
     text2image_router,
     elevenlabs_router,

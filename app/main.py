@@ -1,36 +1,34 @@
 from fastapi import FastAPI
-from app.api.endpoints.text2image_router import router as text2image_router
-from app.api.endpoints.text2text_router import router as text2text_router
+from fastapi.middleware.cors import CORSMiddleware
+from app.api.endpoints.text2text_router import router as text_router
+import app.api.endpoints.text2image_router as image_router_module
+import os
 
 
-app = FastAPI(
-    title="Memoire Project",
-    description="API documentation",
-    version="1.0",
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
+
+# ✅ 라우터 한 번씩만 등록
+app.include_router(text_router, prefix="/atelier", tags=["Atelier"])
+app.include_router(image_router_module.router, prefix="/atelier")
 
 @app.on_event("startup")
 def show_routes():
-    print("\n📋 등록된 라우터 목록:")
+    print("\n📋 [DEBUG] 등록된 라우터 목록:")
     for route in app.routes:
         if hasattr(route, "methods"):
-            print(f"{list(route.methods)} {route.path}")
-
-print("✅ text2image_router import 성공")
-print("✅ text2text_router import 성공")
-
-# 🔗 라우터 등록: 오직 이 두 개만!
-app.include_router(text2image_router, prefix="/atelier", tags=["Atelier"])
-app.include_router(text2text_router, prefix="/atelier", tags=["Atelier"])
+            print(f"➡️ method={route.methods}, path={route.path}")
 
 @app.get("/")
 async def ping():
     return {"message": "pong"}
-
-@app.on_event("startup")
-async def startup_event():
-    print("\n📋 등록된 라우터 목록:")
-    for route in app.routes:
-        if hasattr(route, "methods"):
-            methods = ",".join(route.methods)
-            print(f"{methods:8} {route.path}")

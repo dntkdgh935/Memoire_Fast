@@ -12,11 +12,16 @@ class ComposeResponse(BaseModel):
     video_path: str
 
 class TextGenerationRequest(BaseModel):
+    content: str
+    title: str
+    option: str
     inputText: str
     style: str
     memoryType: str
     collectionId: str
     memoryOrder: int
+    memoryId: int
+    userId: str
     saveToMemory: bool
 
 class TextResultDto(BaseModel):
@@ -27,24 +32,27 @@ class TextResultDto(BaseModel):
     collectionId: str
     memoryOrder: int
 
-# 이미지 생성 요청
 class ImageGenerationRequest(BaseModel):
-    prompt: str                 # 기타 요청 (사용자 입력)
-    style: str                 # 스타일 (사용자 입력)
-    title: str                 # 저장할 제목
-    originalText: str          # 저장할 설명 또는 원문 텍스트
-    collectionId: int          # 소속 컬렉션 ID
-    saveToMemory: bool = True  # 저장 여부
-    userId: Optional[str]      # 사용자 ID
-    memoryType: str = "image"  # 고정값
-    memoryOrder: int = 0       # 정렬 순서 (기본 0)
+    prompt: str
+    style: str
+    title: Optional[str]
+    content: Optional[str] = None  # ✅ null 허용!
+    collectionId: int
+    saveToMemory: bool
+    userId: str
+    memoryType: str
+    memoryOrder: int
 
 # 이미지 생성 응답
 class ImageResultDto(BaseModel):
     imageUrl: str
-    style: str
+    prompt: str
+    title: Optional[str]
+    filename: Optional[str] = None
+    filepath: Optional[str] = None
+    style: Optional[str] = None
     memoryType: str
-    collectionId: str
+    collectionId: int
     memoryOrder: int
 
 class ElevenlabsGenerationRequest(BaseModel):
