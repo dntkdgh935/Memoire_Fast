@@ -9,6 +9,7 @@ from app import (
 router = APIRouter(prefix="/atelier", tags=["Atelier"])
 
 
+
 router.include_router(elevenlabs_router, prefix="/tts")
 router.include_router(runway_router, prefix="/runway")
 router.include_router(openai_router, prefix="/openai")
