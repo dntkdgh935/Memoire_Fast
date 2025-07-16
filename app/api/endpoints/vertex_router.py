@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from app.schemas.atelier_schema import VertexGenerationRequest, VertexGenerationResponse
-from app.services.atelier.vertex_service import
+from app.services.atelier.vertex_service import generate_vertex_image
 
 router = APIRouter()
 
