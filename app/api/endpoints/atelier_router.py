@@ -10,9 +10,8 @@ from app import (
 )
 
 
-router = APIRouter(prefix="/ai", tags=["AI"])
-router.include_router(text2text_router.router)
-router.include_router(text2image_router.router)
+
+
 router.include_router(elevenlabs_router.router, prefix="/tts")
 router.include_router(runway_router.router, prefix="/runway")
 router.include_router(openai_router.router, prefix="/openai")

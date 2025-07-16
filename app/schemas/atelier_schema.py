@@ -18,18 +18,21 @@ class TextGenerationRequest(BaseModel):
     inputText: str
     style: str
     memoryType: str
-    collectionId: str
+    collectionId: int
     memoryOrder: int
     memoryId: int
     userId: str
     saveToMemory: bool
+
+class Config:
+    allow_population_by_field_name = True
 
 class TextResultDto(BaseModel):
     title: str
     content: str
     style: str
     memoryType: str
-    collectionId: str
+    collectionId: int
     memoryOrder: int
 
 class ImageGenerationRequest(BaseModel):
