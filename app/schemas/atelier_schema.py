@@ -46,11 +46,11 @@ class ImageGenerationRequest(BaseModel):
 # 이미지 생성 응답
 class ImageResultDto(BaseModel):
     imageUrl: str
+    filename: str
+    filepath: str
+    title: str
     prompt: str
-    title: Optional[str]
-    filename: Optional[str] = None
-    filepath: Optional[str] = None
-    style: Optional[str] = None
+    style: str
     memoryType: str
     collectionId: int
     memoryOrder: int
