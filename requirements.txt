@@ -6,3 +6,5 @@ elevenlabs
 ffmpeg-python
 runwayml
 httpx
+openai
+Pillow
