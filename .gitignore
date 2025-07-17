@@ -208,3 +208,9 @@ __marimo__/
 
 # Oracle DB 연결 정보가 포함된 파일 제외
 core/dbConnectTemplate.py
+
+# Ignore IntelliJ IDEA project files
+.idea/
+
+# Ignore other IDE-related files
+*.iml
