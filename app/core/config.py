@@ -10,7 +10,6 @@ class Settings(BaseSettings):
     ELEVENLABS_API_KEY: str
     MUBERT_API_KEY: str
     FFMPEG_PATH: str = "ffmpeg"  # 도커에 ffmpeg 설치시 기본 이름
-    openai_api_key: str
 
     model_config = SettingsConfigDict(
         env_file=os.path.abspath(

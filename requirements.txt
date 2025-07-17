@@ -8,3 +8,8 @@ runwayml
 httpx
 openai
 Pillow
+torch
+diffusers[torch]
+scipy
+numpy
+torchsde

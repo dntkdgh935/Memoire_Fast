@@ -4,7 +4,6 @@ from .ffmpeg_service import merge_assets
 
 def compose_video(
     image_url: str,
-    TTS_Prompt: str,
     Video_Prompt: str,
     tts_text: str,
     is_person: bool,

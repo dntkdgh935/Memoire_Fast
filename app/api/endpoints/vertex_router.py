@@ -6,5 +6,5 @@ router = APIRouter()
 
 @router.post("/generate", response_model=VertexGenerationResponse)
 async def vertex_endpoint(request: VertexGenerationRequest):
-    generated_image_url = generate_vertex_image(request.prompt, request.image_url)
-    return VertexGenerationResponse(generated_image_url=generated_image_url)
+    url = await generate_vertex_image(request.prompt, request.image_url)
+    return VertexGenerationResponse(generated_image_url=url)
