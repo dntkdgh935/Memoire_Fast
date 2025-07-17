@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     MUBERT_API_KEY: str
     FFMPEG_PATH: str = "ffmpeg"  # 도커에 ffmpeg 설치시 기본 이름
     openai_api_key: str
+    VERTEX_API_KEY: str
 
     model_config = SettingsConfigDict(
         env_file=os.path.abspath(
