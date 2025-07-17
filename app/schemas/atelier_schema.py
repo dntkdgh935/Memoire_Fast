@@ -96,3 +96,9 @@ class VertexGenerationRequest(BaseModel):
 
 class VertexGenerationResponse(BaseModel):
     generated_image_url: str
+
+class StableGenerationRequest(BaseModel):
+    prompt: str
+
+class StableGenerationResponse(BaseModel):
+    generated_natural_url: str
