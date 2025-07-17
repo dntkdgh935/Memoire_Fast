@@ -205,3 +205,6 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Oracle DB 연결 정보가 포함된 파일 제외
+core/dbConnectTemplate.py
