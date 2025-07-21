@@ -1,5 +1,4 @@
-# path : common\\dbConnectTemplate.py
-# module : common.deBonnectTemplate
+# path : app/core/dbConnectTemplate.py
 # 오라클 db 연결 관리용 공통 모듈 (oracledb 모듈 사용 기반)
 
 # oracledb 모듈 :
