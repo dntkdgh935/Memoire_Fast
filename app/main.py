@@ -11,6 +11,9 @@ import os
 
 
 
+
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # 서버가 올라갈 때 한 번 실행
@@ -40,6 +43,10 @@ app.include_router(atelier_router)
 # ✅ 라우터 한 번씩만 등록
 app.include_router(text_router, prefix="/atelier", tags=["Atelier"])
 app.include_router(image_router_module.router, prefix="/atelier")
+
+# library 관련
+from app.api.endpoints.library_router import router as library_router
+app.include_router(library_router, prefix="/library", tags=["Library"])
 
 
 @app.get("/")

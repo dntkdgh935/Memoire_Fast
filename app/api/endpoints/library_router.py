@@ -1,23 +1,75 @@
 # app/api/endpoints/library_router.py
+import os
 
-from fastapi import APIRouter, HTTPException
-from app.schemas.library_schema import RecommendRequest, RecommendedItem
-from app.services.library.recommend_service import get_liked_items_from_db, recommend_items
+from fastapi import APIRouter, Body
+from typing import List
+from dotenv import load_dotenv
+from openai import OpenAI
+from app.services.library import keyword_search_service
+from app.core import dbConnectTemplate as dbconn
+import numpy as np
 
-router = APIRouter(prefix="/library", tags=["Library"])
+load_dotenv()
+api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=api_key)
 
+router = APIRouter()
 
-@router.post("/recommend", response_model=list[RecommendedItem])
-def recommend_endpoint(request: RecommendRequest):
-    user_id = request.userid  # 유저 ID를 받음
+# POST /library/search
+# 1. 유저가 검색한 keyword를 받음
+# 2. embedding함
+# 3. DB에서 유사한 순서대로 최대 100개 가져옴.(전체가 더 적을시 있는 만큼)
+@router.post("/search", response_model=List[int])
+def search_collections(query: str = Body(..., embed=True)):
+    print("📥 검색어 수신됨:", query) # ex. "모음"
+    query_embedding = get_embedding(query) #str(get_embedding(query))
 
-    try:
-        # 1. 유저가 좋아요한 아이템 ID 조회 (DB)
-        liked_items = get_liked_items_from_db(user_id)
+    #1. 쿼리 임베딩
+    print(query+"임베딩 결과:"+ str(get_embedding(query)))
 
-        # 2. 추천 아이템 계산
-        recommendations = recommend_items(liked_items)
+    #2. db에 접속해 query_embedding과 유사한 순서로 id(integer) 리스트 리턴
+    # 2. Oracle DB 연결
+    conn = dbconn.connect()
+    cursor = conn.cursor()
 
-        return recommendations  # 추천 결과 반환
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="추천 시스템 오류")
+    # 3. 벡터 테이블에서 모든 collection_id와 벡터 가져오기
+    cursor.execute("SELECT collectionid, title_embedding FROM TB_COLLECTION")
+    rows = cursor.fetchall()
+
+    # 4. 코사인 유사도 계산
+    similarity_list = []
+    for row in rows:
+        collection_id = row[0]
+        embedding_str = row[1]  # DB에 저장된 벡터가 문자열 형태라고 가정: "[0.1, 0.2, ...]"
+        try:
+            # TODO: null인 경우 처리 들어가야 함
+            vector = np.array(eval(embedding_str))  # 안전하지 않지만 여기선 임시로 eval 사용
+            sim = cosine_similarity(query_embedding, vector)
+            similarity_list.append((collection_id, sim))
+        except Exception as e:
+            print(f"❌ 벡터 변환 실패: {e}")
+
+    # 5. 유사도 순 정렬 및 ID 추출
+    similarity_list.sort(key=lambda x: x[1], reverse=True)
+    ordered_ids = [cid for cid, _ in similarity_list[:100]]
+
+    # 6. 연결 종료
+    cursor.close()
+    dbconn.close(conn)
+
+    return ordered_ids
+#    return #[1001,1002,1003] # 유사도 순서에 따른 리스트 리턴
+
+def get_embedding(text: str, model: str = "text-embedding-3-small") -> list:
+    response = client.embeddings.create(
+        model=model,
+        input=[text]  # 주의: 리스트로 입력해야 함
+    )
+    return response.data[0].embedding
+
+def cosine_similarity(vec1, vec2):
+    vec1 = np.array(vec1)
+    vec2 = np.array(vec2)
+    if np.linalg.norm(vec1) == 0 or np.linalg.norm(vec2) == 0:
+        return 0.0
+    return float(np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2)))
