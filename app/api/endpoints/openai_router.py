@@ -1,17 +1,19 @@
-from fastapi import APIRouter
-from starlette.responses import JSONResponse
-from app.schemas.atelier_schema import OpenaiGenerationRequest, OpenaiGenerationResponse
+from fastapi import APIRouter, HTTPException
+from app.schemas.atelier_schema import OpenaiGenerationRequest
 from app.services.atelier.prompt_service import PromptRefiner
-import json
+from app.schemas.atelier_schema import PromptRefinementResponse
 
 router = APIRouter()
+_refiner = PromptRefiner()
 
-@router.post("/generate", response_model=OpenaiGenerationResponse)
-async def openai_text_endpoint(request: OpenaiGenerationRequest):
-    req_dict = request.dict()
-    raw_json = json.dumps(req_dict, ensure_ascii=False)
-
-    refiner = PromptRefiner()
-    prompts = refiner.execute(raw_json)
-
-    return JSONResponse(content=prompts)
+@router.post("/refine-prompts", response_model=PromptRefinementResponse)
+async def refine_prompts(req: OpenaiGenerationRequest):
+    try:
+        return PromptRefinementResponse(
+            tts_prompt               = _refiner.refine_tts_prompt(req.tts_raw),
+            video_person_prompt      = _refiner.refine_video_person_prompt(req.video_person_raw),
+            video_noperson_prompt    = _refiner.refine_video_background_prompt(req.video_noperson_raw),
+            image_prompt             = _refiner.refine_image_prompt(req.image_raw),
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"프롬프트 정제 실패: {e}")

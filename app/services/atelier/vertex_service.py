@@ -1,43 +1,49 @@
-# app/services/atelier/vertex_service.py
-import os, io, uuid, requests
-from diffusers import StableDiffusionImg2ImgPipeline
-import torch
+# app/services/atelier/gpt_image_service.py
+
+import openai
+import base64
+from pathlib import Path
 from PIL import Image
+from app.core.config import settings
+from app.services.atelier.prompt_service import PromptRefiner
 
-# 1) 파이프라인을 모듈 로드 시 한 번만 초기화
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-DTYPE  = torch.float16 if DEVICE=="cuda" else torch.float32
+_refiner = PromptRefiner()
 
-PIPE = StableDiffusionImg2ImgPipeline.from_pretrained(
-    "runwayml/stable-diffusion-v1-5",
-    torch_dtype=DTYPE
-).to(DEVICE)
-PIPE.enable_attention_slicing()
+openai.api_key = settings.OPENAI_API_KEY
 
-# 2) 실제 이미지 생성 함수
-async def generate_vertex_image(prompt: str, image_url: str) -> str:
-    # 2-1) 원본 이미지 다운로드
-    resp = requests.get(image_url, timeout=10)
-    resp.raise_for_status()
-    init_image = Image.open(io.BytesIO(resp.content)).convert("RGB")
-    init_image = init_image.resize((512, 512))  # 모델 안정화를 위해 리사이즈
+def edit_with_gpt_image_base64(
+    image_path: str,
+    style_prompt: str,
+    n: int = 1,
+    size: str = "1024x1024",
+    model: str = "gpt-image-1",
+) -> list[str]:
+    # 원본 + 전체 흰색 마스크 준비
+    img = Image.open(image_path).convert("RGBA")
+    mask = Image.new("RGBA", img.size, (255, 255, 255, 255))
+    tmp_img, tmp_mask = Path("tmp_img.png"), Path("tmp_mask.png")
+    img.save(tmp_img); mask.save(tmp_mask)
 
-    # 2-2) img2img 실행
-    result = PIPE(
-        prompt=prompt,
-        image=init_image,
-        strength=0.3,            # 0.2~0.5 사이로
-        guidance_scale=7.5,
-        num_inference_steps=30
-    )
-    output_img = result.images[0]
+    refined = _refiner.refine_image_prompt(style_prompt)
 
-    # 2-3) 저장 (static 디렉터리에 UUID 파일명)
-    out_fname = f"vertex_{uuid.uuid4().hex}.png"
-    out_path  = os.path.join("static", out_fname)
-    output_img.save(out_path)
+    # edit 호출 (response_format 없이)
+    with tmp_img.open("rb") as i, tmp_mask.open("rb") as m:
+        resp = openai.images.edit(
+            model=model,
+            image=i,
+            mask=m,
+            prompt=refined,
+            n=n,
+            size=size
+        )
 
-    # 2-4) 최종 접근 가능 URL 반환
-    #    예: https://your-domain.com/static/vertex_abc123.png
-    base_url = os.getenv("STATIC_BASE_URL", "http://localhost:8000/static")
-    return f"{base_url}/{out_fname}"
+    out_urls = []
+    for idx, data in enumerate(resp.data):
+        b64 = data.b64_json
+        img_bytes = base64.b64decode(b64)
+        out = Path("out")/f"styled_{idx}.png"
+        out.parent.mkdir(exist_ok=True)
+        out.write_bytes(img_bytes)
+        out_urls.append(str(out.resolve()))
+    return out_urls
+
