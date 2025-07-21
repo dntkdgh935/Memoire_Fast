@@ -84,7 +84,8 @@ class OpenaiGenerationResponse(BaseModel):
 
 class FfmpegGenerationRequest(BaseModel):
     video_url: str
-    tts_url: str
+    tts_url: Optional[str] = None
+    music_url: Optional[str] = None
 
 class FfmpegGenerationResponse(BaseModel):
     processed_video_url: str
@@ -97,8 +98,15 @@ class VertexGenerationRequest(BaseModel):
 class VertexGenerationResponse(BaseModel):
     generated_image_url: str
 
+
 class StableGenerationRequest(BaseModel):
     prompt: str
 
 class StableGenerationResponse(BaseModel):
     generated_natural_url: str
+
+class PromptRefinementResponse(BaseModel):
+    tts_prompt: str
+    video_person_prompt: str
+    video_noperson_prompt: str
+    image_prompt: str
