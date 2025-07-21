@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.endpoints.atelier_router import router as atelier_router
 from fastapi.routing import APIRoute
 from app.api.endpoints.text2text_router import router as text_router
+from app.api.endpoints.face_recognition_router import router as face_recognition_router
 import app.api.endpoints.text2image_router as image_router_module
 from contextlib import asynccontextmanager
 import os
@@ -44,9 +45,12 @@ app.include_router(atelier_router)
 app.include_router(text_router, prefix="/atelier", tags=["Atelier"])
 app.include_router(image_router_module.router, prefix="/atelier")
 
-# library 관련
+
+app.include_router(face_recognition_router)
+
 from app.api.endpoints.library_router import router as library_router
 app.include_router(library_router, prefix="/library", tags=["Library"])
+
 
 
 @app.get("/")
