@@ -45,6 +45,7 @@ class ImageGenerationRequest(BaseModel):
     userId: str
     memoryType: str
     memoryOrder: int
+    otherRequest: Optional[str] = None
 
 # 이미지 생성 응답
 class ImageResultDto(BaseModel):

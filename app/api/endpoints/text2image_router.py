@@ -16,34 +16,33 @@ FUNCTIONS = [{
         "type": "object",
         "properties": {
             "prompt": {"type": "string", "description": "최종 프롬프트 문장"},
-            "size": {"type": "string", "enum": ["256x256","512x512","1024x1024"], "default": "1024x1024"},
+            "size": {"type": "string", "enum": ["256x256", "512x512", "1024x1024"], "default": "1024x1024"},
             "n": {"type": "integer", "default": 1, "description": "생성할 이미지 개수"}
         },
         "required": ["prompt"]
     }
 }]
 
-# 2) 범용(일러스트 등) 시스템 템플릿
+# 2) 스타일 템플릿
 GENERAL_TEMPLATE = """
-You are a world-class DALL·E 3 prompt engineer.
-Given STYLE_DESC, SCENE, and ADDITIONAL NOTES, produce one ultra-detailed English prompt
-that satisfies ALL of these:
- 1) exact STYLE_DESC
- 2) background setting (interior/exterior, location, time, weather)
- 3) composition (camera angle, framing, perspective)
- 4) lens/shot type (e.g., 50mm f/1.2, wide-angle)
- 5) exposure settings (aperture, ISO, shutter speed)
- 6) lighting & mood (cinematic, warm/cool, natural)
- 7) textures & materials (watercolor textures, cel-shaded line art, fabric weave)
- 8) color palette & grading (pastel, vibrant, film grain)
- 9) emotional tone (heartwarming, dramatic, serene)
-10) high-detail hints (\"ultra-detailed\", \"8K\")
+You are a world-class visual prompt engineer for DALL·E 3.
 
-After writing the prompt, self-review against these ten criteria and fill any gaps.
-Return ONLY the final prompt.
+Your MOST IMPORTANT TASK is to generate a highly detailed English prompt that transforms text into an image.
+
+Follow these rules strictly:
+1. The visual STYLE must match STYLE_DESC (e.g., cartoon, watercolor, oil painting, pixel art, poster).
+2. Include key visual elements from SCENE (location, setting, characters, atmosphere).
+3. Integrate ADDITIONAL NOTES naturally as visual ideas.
+4. Describe composition: camera angle, perspective, subject placement.
+5. Describe lighting: ambient, directional, natural, dramatic.
+6. Describe texture, color grading, and mood in visual terms.
+7. Add artistic modifiers: ultra-detailed, trending on ArtStation, 8K.
+
+Avoid vagueness. Be precise and visually rich.
+
+Respond with ONLY the final English prompt.
 """
 
-# 3) 포토리얼 특화 시스템 템플릿 (negative instructions 포함)
 PHOTO_TEMPLATE = """
 You are a world-class photorealistic prompt engineer.
 Every prompt MUST include:
@@ -69,12 +68,14 @@ async def preflight_handler():
 @router.post("/generate-image", response_model=ImageResultDto)
 async def generate_image(request: ImageGenerationRequest):
     # 1) 스타일 → 영어 디스크립터 변환
-    style_resp = await gpt.chat.completions.create(
+    style_resp = gpt.chat.completions.create(
         model="gpt-4o",
         messages=[
             {"role": "system", "content":
-                "You are a style translator. "
-                "Given a style keyword, output a concise English style descriptor."},
+                "You are a visual style translator. "
+                "Given a short Korean style description (e.g. '카툰스타일'), return a detailed English phrase that describes its visual elements. "
+                "Output should describe texture, composition, and color tone in 1~2 sentences."
+             },
             {"role": "user", "content": f"Style: {request.style}"}
         ],
         temperature=0.7,
@@ -82,23 +83,21 @@ async def generate_image(request: ImageGenerationRequest):
     )
     style_desc = style_resp.choices[0].message.content.strip()
 
-    # 2) 어떤 템플릿 사용할지 결정
-    if is_photoreal_style(style_desc):
-        system_template = PHOTO_TEMPLATE
-    else:
-        system_template = GENERAL_TEMPLATE
+    # 2) 템플릿 결정
+    system_template = PHOTO_TEMPLATE if is_photoreal_style(style_desc) else GENERAL_TEMPLATE
 
-    # 3) GPT에 최종 프롬프트 생성 요청 (Function Calling)
+    # 3) 프롬프트 생성
     user_msg = (
-        f"STYLE_DESC: {style_desc}\n"
-        f"SCENE: {request.content}\n"
-        f"ADDITIONAL NOTES: {request.otherRequest or 'none'}"
+        f"[STYLE_DESC]\n{style_desc}\n\n"
+        f"[SCENE]\n{request.content.strip()}\n\n"
+        f"[ADDITIONAL NOTES]\n{request.otherRequest.strip() if request.otherRequest else 'none'}"
     )
-    chat_resp = await gpt.chat.completions.create(
+
+    chat_resp = gpt.chat.completions.create(
         model="gpt-4o",
         messages=[
             {"role": "system", "content": system_template},
-            {"role": "user",   "content": user_msg}
+            {"role": "user", "content": user_msg}
         ],
         functions=FUNCTIONS,
         function_call={"name": "generate_image_dall_e"},
@@ -107,26 +106,39 @@ async def generate_image(request: ImageGenerationRequest):
     )
 
     fn_call = chat_resp.choices[0].message.function_call
-    args    = fn_call.arguments or {}
-    prompt  = args.get("prompt")
-    size    = args.get("size", "1024x1024")
-    n       = args.get("n", 1)
+    arguments = fn_call.arguments
+    if isinstance(arguments, str):
+        import json
+        arguments = json.loads(arguments)
+
+    prompt = arguments.get("prompt")
+    size = arguments.get("size", "1024x1024")
+    n = arguments.get("n", 1)
 
     if not prompt:
-        raise HTTPException(status_code=500, detail="Failed to generate prompt")
+        raise HTTPException(status_code=500, detail="프롬프트 생성 실패")
 
-    # 4) negative instructions: photoreal 분기일 때 추가
     if is_photoreal_style(style_desc):
-        prompt = prompt.strip()
         prompt += " —no illustration, no watercolor, no cartoon, no sketch, no line art"
 
-    # 5) DALL·E 3에 이미지 생성 요청
-    dalle_resp = await gpt.images.generate(
+    # 4) DALL·E 이미지 생성
+    dalle_resp = gpt.images.generate(
         model="dall-e-3",
         prompt=prompt,
         size=size,
         n=n
     )
-
     image_url = dalle_resp.data[0].url
-    return ImageResultDto(imageUrl=image_url)
+
+    # 5) 전체 DTO로 응답 반환
+    return ImageResultDto(
+        imageUrl=image_url,
+        filename="generated_image.png",
+        filepath="",  # 저장 안 한 경우 공백
+        title=request.title,
+        prompt=prompt,
+        style=request.style,
+        memoryType=request.memoryType,
+        collectionId=request.collectionId,
+        memoryOrder=request.memoryOrder
+    )
