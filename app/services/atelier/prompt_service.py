@@ -1,67 +1,57 @@
 import os
-import sys
+# app/services/atelier/prompt_refiner.py
+
 import json
 from openai import OpenAI
 from app.core.config import settings
 
-
 class PromptRefiner:
-
     def __init__(self):
         if not settings.OPENAI_API_KEY:
             raise RuntimeError("OPENAI_API_KEY가 설정되어 있지 않습니다.")
         self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
-    def refine_all_prompts(self, inputs: dict[str, str]) -> dict[str, str]:
-        system_prompt = (
-            "You are an expert prompt-refiner. Given raw descriptions for:"
-            "\n1) TTS generation"
-            "\n2) Video with a person"
-            "\n3) Video without a person"
-            "\n4) Image generation"
-            "\nTranslate and refine each description into high-quality English prompts optimized for its target API,"
-            " and return a JSON with keys:\n"
-            "- \"tts_prompt\": detailed, natural text for speech synthesis in English\n"
-            "- \"video_person_prompt\": concise and clear English prompt for a video featuring a person\n"
-            "- \"video_noperson_prompt\": English prompt for a background video without people\n"
-            "- \"image_prompt\": English prompt for image generation"
-        )
-        user_message = json.dumps(inputs, ensure_ascii=False)
-
-        response = self.client.chat.completions.create(
-            model="gpt-3.5-turbo",
+    def _chat_refine(self, system_prompt: str, user_input: str, max_tokens: int = 60) -> str:
+        resp = self.client.chat.completions.create(
+            model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_message}
+                {"role": "system",  "content": system_prompt},
+                {"role": "user",    "content": user_input}
             ],
-            temperature=0.7,
-            max_tokens=400
+            temperature=0.2,
+            max_tokens=max_tokens
         )
+        return resp.choices[0].message.content.strip()
 
-        content = response.choices[0].message.content.strip()
-        try:
-            return json.loads(content)
-        except json.JSONDecodeError:
-            raise RuntimeError(f"Prompt refinement 실패: 올바른 JSON이 아닙니다. 응답 내용: {content}")
+    def refine_image_prompt(self, raw_prompt: str) -> str:
+        system = (
+            "You are a professional prompt engineer for image generation APIs. "
+            "Rewrite the user’s description into a concise, vivid English prompt "
+            "optimized for DALL·E (gpt-image-1). Respond with the prompt only."
+        )
+        return self._chat_refine(system, raw_prompt)
 
-    def execute(self, raw_input: str):
-        try:
-            inputs = json.loads(raw_input)
-        except json.JSONDecodeError:
-            print("❌ JSON 입력 파싱 실패", file=sys.stderr)
-            sys.exit(1)
+    def refine_tts_prompt(self, raw_text: str) -> str:
+        system = (
+            "You are an expert in voice and TTS prompt crafting. "
+            "Rewrite the user’s text into a natural, expressive English script "
+            "suitable for speech synthesis. Respond with the script only."
+        )
+        return self._chat_refine(system, raw_text, max_tokens=150)
 
-        prompts = self.refine_all_prompts(inputs)
-        print(json.dumps(prompts, ensure_ascii=False, indent=2))
-        return prompts
+    def refine_video_person_prompt(self, raw_desc: str) -> str:
+        system = (
+            "You are a video prompt specialist for scenes with people. "
+            "Convert the user’s description into a clear, concise English prompt "
+            "for a video generation API, emphasizing the person’s actions and environment."
+        )
+        return self._chat_refine(system, raw_desc)
 
+    def refine_video_background_prompt(self, raw_desc: str) -> str:
+        system = (
+            "You specialize in background-only video prompts. "
+            "Turn the user’s description into an English prompt "
+            "for a video generation API, focusing on scenery and atmosphere."
+        )
+        return self._chat_refine(system, raw_desc)
 
-if __name__ == "__main__":
-    inputs = {
-        "tts_prompt": "엄마에게 보내는 편지",
-        "video_person_prompt": "햇살 아래 웃는 소녀"
-    }
-
-    refiner = PromptRefiner()
-    raw_input_data = json.dumps(inputs, ensure_ascii=False)
-    refiner.execute(raw_input_data)
