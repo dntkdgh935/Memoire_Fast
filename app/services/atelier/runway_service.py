@@ -55,41 +55,39 @@ def generate_image_video(
 
 BASE_DIR = os.path.dirname(__file__)
 
-def start():
-    print("▶️ start() 진입했습니다")
-    image_path = os.path.join(BASE_DIR, ".jpg")
-    prompt = "저 사진 안의 사람이 서럽게 우는 영상 만들어줘"
+# def start():
+#     print("▶️ start() 진입했습니다")
+#     image_path = os.path.join(BASE_DIR, ".jpg")
+#     prompt = "저 사진 안의 사람이 서럽게 우는 영상 만들어줘"
+#
+#     print(f"image_path: {image_path} (존재: {os.path.isfile(image_path)})")
+#     if not os.path.isfile(image_path):
+#         print("❌ 파일을 찾을 수 없습니다.")
+#         return
+#
+#     # 1) 로컬 파일 → Base64 Data URI 변환
+#     with open(image_path, "rb") as f:
+#         b64 = base64.b64encode(f.read()).decode()
+#     data_uri = f"data:image/jpeg;base64,{b64}"
+#     print("✅ Data URI 생성, 길이:", len(data_uri))
+#
+#     # 2) 바로 비디오 생성 호출
+#     print("비디오 생성 파라미터:", {
+#         "model": "gen3a_turbo",
+#         "ratio": "1280:768",
+#         "duration": 10
+#     })
+#     try:
+#         uri = generate_image_video(
+#             image_data_uri=data_uri,
+#             prompt_text=prompt,
+#             model="gen3a_turbo",
+#             ratio="1280:768",
+#             duration=10
+#         )
+#         print("✅ 비디오 생성 완료! URI:", uri)
+#     except TaskFailedError as e:
+#         print("❌ Runway 작업 실패:", e)
+#     except Exception as e:
+#         print("❌ 예기치 않은 오류 발생:", e)
 
-    print(f"image_path: {image_path} (존재: {os.path.isfile(image_path)})")
-    if not os.path.isfile(image_path):
-        print("❌ 파일을 찾을 수 없습니다.")
-        return
-
-    # 1) 로컬 파일 → Base64 Data URI 변환
-    with open(image_path, "rb") as f:
-        b64 = base64.b64encode(f.read()).decode()
-    data_uri = f"data:image/jpeg;base64,{b64}"
-    print("✅ Data URI 생성, 길이:", len(data_uri))
-
-    # 2) 바로 비디오 생성 호출
-    print("비디오 생성 파라미터:", {
-        "model": "gen3a_turbo",
-        "ratio": "1280:768",
-        "duration": 10
-    })
-    try:
-        uri = generate_image_video(
-            image_data_uri=data_uri,
-            prompt_text=prompt,
-            model="gen3a_turbo",
-            ratio="1280:768",
-            duration=10
-        )
-        print("✅ 비디오 생성 완료! URI:", uri)
-    except TaskFailedError as e:
-        print("❌ Runway 작업 실패:", e)
-    except Exception as e:
-        print("❌ 예기치 않은 오류 발생:", e)
-
-if __name__ == "__main__":
-    start()

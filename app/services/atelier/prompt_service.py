@@ -33,7 +33,7 @@ class PromptRefiner:
 
     def refine_tts_prompt(self, raw_text: str) -> str:
         system = (
-            "You are an expert in voice and TTS prompt crafting. "
+            "You are an expert in voice a:wnd TTS prompt crafting. "
             "Rewrite the user’s text into a natural, expressive English script "
             "suitable for speech synthesis. Respond with the script only."
         )
@@ -54,4 +54,23 @@ class PromptRefiner:
             "for a video generation API, focusing on scenery and atmosphere."
         )
         return self._chat_refine(system, raw_desc)
+
+    def generate_nature_sound_prompt(self,image_description):
+        system_prompt = (
+            "너는 이미지를 설명한 텍스트를 기반으로 자연 환경음을 생성하기 위한 구체적이고 명확한 프롬프트를 작성하는 전문가야. "
+            "최종 프롬프트는 음향 생성 AI에게 전달될 예정이므로, 사운드의 특징을 상세히 묘사해야 해."
+        )
+        user_prompt = f"이미지 설명: {image_description}\n\n자연 환경음 생성용 프롬프트:"
+
+        response = self.client.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            max_tokens=200,
+        )
+
+        sound_prompt = response.choices[0].message.content
+        return sound_prompt
 
