@@ -17,3 +17,4 @@ face_recognition
 opencv-python
 transformers
 python-multipart
+oracledb
