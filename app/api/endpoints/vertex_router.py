@@ -1,12 +1,18 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from app.schemas.atelier_schema import VertexGenerationRequest, VertexGenerationResponse
 from app.services.atelier.vertex_service import edit_with_gpt_image_base64
-import logging as log
 
 router = APIRouter()
 
 @router.post("/generate", response_model=VertexGenerationResponse)
-async def vertex_endpoint(request: VertexGenerationRequest):
+def vertex_endpoint(request: VertexGenerationRequest):
     print("👉 im2im_generate called with:", request)
-    url = await edit_with_gpt_image_base64(request.prompt, request.image_url)
-    return VertexGenerationResponse(generated_image_url=url)
+    try:
+        out_urls = edit_with_gpt_image_base64(
+            image_path=request.image_url,
+            style_prompt=request.prompt,
+        )
+    except Exception as e:
+        print("[im2im][ERROR]", e)
+        raise HTTPException(status_code=500, detail=str(e))
+    return VertexGenerationResponse(generated_image_url=out_urls[0])

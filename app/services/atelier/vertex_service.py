@@ -1,7 +1,9 @@
-# app/services/atelier/gpt_image_service.py
+# app/services/atelier/vertex_service.py
 
+from io import BytesIO
 import openai
 import base64
+import requests
 from pathlib import Path
 from PIL import Image
 from app.core.config import settings
@@ -16,15 +18,33 @@ def edit_with_gpt_image_base64(
     style_prompt: str,
     n: int = 1,
     size: str = "1024x1024",
-    model: str = "gpt-image-1",
+    model: str = "gpt-image-1"
 ) -> list[str]:
+    print(f"[im2im] called with image_path={image_path!r}, style_prompt={style_prompt!r}")
+
+    if image_path.startswith("http://") or image_path.startswith("https://"):
+        print("[im2im] fetching image via HTTP")
+        resp = requests.get(image_path)
+        print(f"[im2im] HTTP status: {resp.status_code}")
+        resp.raise_for_status()
+        img_bytes = resp.content
+        img = Image.open(BytesIO(img_bytes)).convert("RGBA")
+    else:
+        print("[im2im] opening local image file")
+        img = Image.open(image_path).convert("RGBA")
+
+    print(f"[im2im] image size: {img.size}")
+
     # 원본 + 전체 흰색 마스크 준비
-    img = Image.open(image_path).convert("RGBA")
     mask = Image.new("RGBA", img.size, (255, 255, 255, 255))
     tmp_img, tmp_mask = Path("tmp_img.png"), Path("tmp_mask.png")
     img.save(tmp_img); mask.save(tmp_mask)
+    print(f"[im2im] saved tmp_img={tmp_img} tmp_mask={tmp_mask}")
+
 
     refined = _refiner.refine_image_prompt(style_prompt)
+    print(f"[im2im] refined prompt: {refined!r}")
+
 
     # edit 호출 (response_format 없이)
     with tmp_img.open("rb") as i, tmp_mask.open("rb") as m:
@@ -36,6 +56,7 @@ def edit_with_gpt_image_base64(
             n=n,
             size=size
         )
+    print(f"[im2im] OpenAI images.edit returned {len(resp.data)} items")
 
     out_urls = []
     for idx, data in enumerate(resp.data):
@@ -45,5 +66,8 @@ def edit_with_gpt_image_base64(
         out.parent.mkdir(exist_ok=True)
         out.write_bytes(img_bytes)
         out_urls.append(str(out.resolve()))
+        print(f"[im2im] wrote output[{idx}]: {out}")
+
+
     return out_urls
 
