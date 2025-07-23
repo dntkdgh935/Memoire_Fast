@@ -70,7 +70,7 @@ class ElevenlabsGenerationResponse(BaseModel):
 class RunwayGenerationRequest(BaseModel):
     image_url: str
     prompt: str
-    tts_url: str
+    tts_url: Optional[str] = None
 
 class RunwayGenerationResponse(BaseModel):
     video_url: str

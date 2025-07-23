@@ -13,7 +13,7 @@ def analyze_image(image_path):
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": "이 이미지의 내용을 상세히 묘사해줘."},
+                    {"type": "text", "text": "Describe the content of this image in detail."},
                     {"type": "image_url", "image_url": f"data:image/jpeg;base64,{encoded_image}"}
                 ],
             }
