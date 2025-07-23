@@ -1,3 +1,6 @@
+import os
+from uuid import uuid4
+
 def generate_stable_audio_file(
     prompt: str,
     duration: 15,
@@ -23,20 +26,24 @@ def generate_stable_audio_file(
         audio_end_in_s=float(duration),
         num_inference_steps=num_steps
     )
-    # pipeline returns a list of tensors, take first and move to CPU
-    audio_tensor = output.audios[0].cpu()  # shape: (T,) or (1, T)
-    audio = audio_tensor.numpy().squeeze()  # ensure shape (T,)
+    audio_tensor = output.audios[0].cpu()
+    audio = audio_tensor.numpy().squeeze()
 
     if audio.ndim == 2:
        audio = audio.T
 
-    # float32 in [-1,1] → int16 in [-32767,32767]
     int16_audio = (audio * 32767).astype(np.int16)
 
-    # write WAV at 44.1 kHz
-    wavwrite("rain_audio_output.wav", 44100, int16_audio)
-    print(f"✅ Generated audio saved at rain_audio_output.wav")
-    return "rain_audio_output.wav"
+    base_dir = r"C:\upload_files\audio"
+    os.makedirs(base_dir, exist_ok=True)
+
+    audio_filename = f"audio_{uuid4().hex}.wav"
+    file_path = os.path.join(base_dir, audio_filename)
+
+    wavwrite(file_path, 44100, int16_audio)
+
+    # Spring에서 매핑할 URL 경로만 리턴
+    return f"/media/audio/{audio_filename}"
 
 # if __name__ == "__main__":
 #     rain_and_horn_prompt = (

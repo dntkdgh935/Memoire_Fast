@@ -8,3 +8,4 @@ from app.api.endpoints.openai_router      import router as openai_router
 from app.api.endpoints.ffmpeg_router      import router as ffmpeg_router
 from app.api.endpoints.vertex_router      import router as vertex_router
 from app.api.endpoints.stable_router import router as stable_router
+from app.api.endpoints.vision_router import router as vision_router

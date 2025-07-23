@@ -26,8 +26,9 @@ class PromptRefiner:
     def refine_image_prompt(self, raw_prompt: str) -> str:
         system = (
             "You are a professional prompt engineer for image generation APIs. "
-            "Rewrite the user’s description into a concise, vivid English prompt "
-            "optimized for DALL·E (gpt-image-1). Respond with the prompt only."
+            "Rewrite the user’s description into a concise, vivid English prompt optimized for DALL·E (gpt-image-1). "
+            "Start your prompt with 'In the mood of the original image,' and ensure that the overall feeling and atmosphere are preserved. "
+            "Respond with the prompt only."
         )
         return self._chat_refine(system, raw_prompt)
 
@@ -39,38 +40,25 @@ class PromptRefiner:
         )
         return self._chat_refine(system, raw_text, max_tokens=150)
 
-    def refine_video_person_prompt(self, raw_desc: str) -> str:
-        system = (
-            "You are a video prompt specialist for scenes with people. "
-            "Convert the user’s description into a clear, concise English prompt "
-            "for a video generation API, emphasizing the person’s actions and environment."
-        )
-        return self._chat_refine(system, raw_desc)
 
     def refine_video_background_prompt(self, raw_desc: str) -> str:
         system = (
-            "You specialize in background-only video prompts. "
-            "Turn the user’s description into an English prompt "
-            "for a video generation API, focusing on scenery and atmosphere."
+            "You are a professional prompt engineer for image generation APIs. "
+            "Rewrite the user's description into a concise, vivid English prompt optimized for DALL·E (gpt-image-1). "
+            "Start your prompt with 'In the mood of the original image,' and ensure that the overall feeling and atmosphere are preserved. "
+            "Explicitly avoid any duplicated, distorted, or extra faces, heads, limbs, or characters. "
+            "Only depict a natural, realistic scene based on the user's intent. "
+            "Respond with the prompt only."
         )
         return self._chat_refine(system, raw_desc)
 
     def generate_nature_sound_prompt(self,image_description):
-        system_prompt = (
-            "너는 이미지를 설명한 텍스트를 기반으로 자연 환경음을 생성하기 위한 구체적이고 명확한 프롬프트를 작성하는 전문가야. "
-            "최종 프롬프트는 음향 생성 AI에게 전달될 예정이므로, 사운드의 특징을 상세히 묘사해야 해."
+        system = (
+            "As an expert, write a clear and detailed prompt for generating natural ambient sounds, based on the provided image description."
+            "The prompt will be used by a sound generation AI, so make sure to describe the features and qualities of the sound thoroughly."
         )
-        user_prompt = f"이미지 설명: {image_description}\n\n자연 환경음 생성용 프롬프트:"
+        user_prompt = f"Image description: {image_description}\n\nPrompt for generating natural ambient sounds:"
 
-        response = self.client.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            max_tokens=200,
-        )
+        return self._chat_refine(system, user_prompt, max_tokens=200)
 
-        sound_prompt = response.choices[0].message.content
-        return sound_prompt
 

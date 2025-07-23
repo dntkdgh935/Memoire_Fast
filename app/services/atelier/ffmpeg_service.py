@@ -21,22 +21,29 @@ def _download_if_url(src: str, dest: Path) -> Path:
         return dest
     return Path(src)
 
-def merge_assets(video_url: str, tts_path: str | None, music_url: str | None,
+def merge_assets(video_url: str, tts_path: str | None, music_url: str,
                  output_path: str = "final.mp4") -> str:
     tmp_dir = Path(tempfile.mkdtemp())
     video_file = _download_if_url(video_url, tmp_dir / "video.mp4")
     music_file = _download_if_url(music_url, tmp_dir / "music.mp3") if music_url else None
     tts_file = Path(tts_path) if tts_path else None
 
-    cmd = [settings.FFMPEG_PATH, "-i", str(video_file)]
-    if music_file:
-        cmd += ["-i", str(music_file)]
+    cmd = [settings.FFMPEG_PATH, "-y", "-i", str(video_file), "-i", str(music_file)]
+
     if tts_file:
-        cmd += ["-i", str(tts_file),
-                "-filter_complex", "[1:a][2:a]amix=inputs=2:duration=first[aud]",
-                "-map", "0:v", "-map", "[aud]"]
+        # TTS 있음 → 배경음+TTS 합성 후 비디오에 붙임
+        cmd += [
+            "-i", str(tts_file),
+            "-filter_complex", "[1:a][2:a]amix=inputs=2:duration=first[aud]",
+            "-map", "0:v", "-map", "[aud]"
+        ]
     else:
-        cmd += ["-map", "0:v", "-map", music_file and "1:a" or "0:a"]
+        # TTS 없음 → 배경음만 비디오에 붙임
+        cmd += [
+            "-map", "0:v", "-map", "1:a"
+        ]
     cmd += ["-shortest", str(output_path)]
+
     subprocess.run(cmd, check=True)
+    shutil.rmtree(tmp_dir, ignore_errors=True)
     return output_path
