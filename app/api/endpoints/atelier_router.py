@@ -7,6 +7,7 @@ from app import (
     vertex_router,
     stable_router,
     vision_router,
+    non_sync_video_router,
 )
 router = APIRouter(prefix="/atelier", tags=["Atelier"])
 
@@ -19,6 +20,7 @@ router.include_router(ffmpeg_router, prefix="/ffmpeg")
 router.include_router(vertex_router, prefix="/image-1")
 router.include_router(stable_router, prefix="/stable")
 router.include_router(vision_router, prefix="/vision")
+router.include_router(non_sync_video_router, prefix="/video")
 
 
 

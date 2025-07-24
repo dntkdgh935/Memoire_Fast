@@ -21,12 +21,19 @@ def _download_if_url(src: str, dest: Path) -> Path:
         return dest
     return Path(src)
 
-def merge_assets(video_url: str, tts_path: str | None, music_url: str,
+def merge_assets(video_url: str, tts_path: str,
                  output_path: str = "final.mp4") -> str:
     tmp_dir = Path(tempfile.mkdtemp())
     video_file = _download_if_url(video_url, tmp_dir / "video.mp4")
-    music_file = _download_if_url(music_url, tmp_dir / "music.mp3") if music_url else None
-    tts_file = Path(tts_path) if tts_path else None
+    tts_file = Path(tts_path)
+
+    # 2) 로컬 저장 폴더 준비
+    output_dir = Path("C:/upload_files/memory_video")
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # 3) 고유 파일명 생성
+    out_name = f"{uuid.uuid4().hex}.mp4"
+    output_path = output_dir / out_name
 
     cmd = [settings.FFMPEG_PATH, "-y", "-i", str(video_file), "-i", str(music_file)]
 
@@ -46,4 +53,5 @@ def merge_assets(video_url: str, tts_path: str | None, music_url: str,
 
     subprocess.run(cmd, check=True)
     shutil.rmtree(tmp_dir, ignore_errors=True)
-    return output_path
+
+    return f"/memory_video/{filename}"

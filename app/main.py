@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 
 from app.api.endpoints.tarot_router import router as tarot_router
 import os
+from fastapi.staticfiles import StaticFiles
 
 
 
@@ -53,7 +54,7 @@ app.include_router(face_recognition_router)
 from app.api.endpoints.library_router import router as library_router
 app.include_router(library_router, prefix="/library", tags=["Library"])
 
-
+app.mount("/memory_video", StaticFiles(directory="C:/upload_files/memory_video"), name="memory_video")
 
 @app.get("/")
 async def ping():

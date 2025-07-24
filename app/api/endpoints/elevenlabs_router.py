@@ -6,5 +6,5 @@ router = APIRouter()
 
 @router.post("/generate", response_model=ElevenlabsGenerationResponse)
 async def generate_tts_endpoint(request: ElevenlabsGenerationRequest):
-    audio_url = generate_tts(request.text)
+    audio_url = generate_tts(request.prompt, request.speech)
     return ElevenlabsGenerationResponse(audio_url=audio_url)
