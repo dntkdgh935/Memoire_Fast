@@ -61,7 +61,7 @@ class ImageResultDto(BaseModel):
 
 class ElevenlabsGenerationRequest(BaseModel):
     prompt: str
-    text: str
+    speech: str
 
 class ElevenlabsGenerationResponse(BaseModel):
     audio_url: str
@@ -85,8 +85,8 @@ class OpenaiGenerationResponse(BaseModel):
 
 class FfmpegGenerationRequest(BaseModel):
     video_url: str
-    tts_url: Optional[str] = None
-    music_url: Optional[str] = None
+    tts_url: str
+    # music_url: str
 
 class FfmpegGenerationResponse(BaseModel):
     processed_video_url: str
@@ -102,6 +102,8 @@ class VertexGenerationResponse(BaseModel):
 
 class StableGenerationRequest(BaseModel):
     prompt: str
+    duration: int
+    numSteps: int
 
 class StableGenerationResponse(BaseModel):
     generated_natural_url: str
@@ -111,3 +113,23 @@ class PromptRefinementResponse(BaseModel):
     video_person_prompt: str
     video_noperson_prompt: str
     image_prompt: str
+
+# sync 모델 사용 안할 경우 영상 생성 Request
+class VideoPipelineRequest(BaseModel):
+    # 로컬 이미지 파일 경로 또는 URL
+    image_url: str
+    prompt: str
+    tts_url: Optional[str] = None
+
+class VideoPipelineResponse(BaseModel):
+    video_url: str
+
+class MediaPipelineRequest(BaseModel):
+    raw_video_url: str
+    image_url: str
+    tts_url: Optional[str] = None
+    duration: int = 15
+    num_steps: int = 25
+
+class MediaPipelineResponse(BaseModel):
+    final_video_url: str

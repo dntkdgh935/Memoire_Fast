@@ -1,7 +1,6 @@
-import os
 # app/services/atelier/prompt_refiner.py
-
-import json
+import os
+import time
 from openai import OpenAI
 from app.core.config import settings
 
@@ -12,16 +11,27 @@ class PromptRefiner:
         self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
     def _chat_refine(self, system_prompt: str, user_input: str, max_tokens: int = 60) -> str:
-        resp = self.client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system",  "content": system_prompt},
-                {"role": "user",    "content": user_input}
-            ],
-            temperature=0.2,
-            max_tokens=max_tokens
-        )
-        return resp.choices[0].message.content.strip()
+        backoff = 0.5
+        for _ in range(6):
+            try:
+                resp = self.client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user",   "content": user_input}
+                    ],
+                    temperature=0.2,
+                    max_tokens=max_tokens
+                )
+                return resp.choices[0].message.content.strip()
+            except RateLimitError:
+                time.sleep(backoff)
+                backoff *= 2
+            except OpenAIError as e:
+                raise e
+        # 모든 재시도 실패 시
+        raise RateLimitError("Exceeded max retries in PromptRefiner._chat_refine")
+
 
     def refine_image_prompt(self, raw_prompt: str) -> str:
         system = (

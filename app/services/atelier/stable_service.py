@@ -3,8 +3,8 @@ from uuid import uuid4
 
 def generate_stable_audio_file(
     prompt: str,
-    duration: 15,
-    num_steps: 25,
+    duration: int = 15,
+    num_steps: int = 25,
 ) -> str:
     # 함수 내부로 heavy import 이동
     import torch

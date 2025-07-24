@@ -2,10 +2,28 @@
 import io
 import os
 import base64
+import requests
+import uuid
+from pathlib import Path
 from app.core.config import settings
 from runwayml import RunwayML, TaskFailedError
 
 client = RunwayML(api_key=settings.RUNWAY_API_KEY)
+
+def _download_if_url(src: str, dest: Path) -> Path:
+    """
+    src가 URL이면 다운로드 → dest에 저장.
+    src가 로컬 파일 경로면 그대로 Path(src) 리턴.
+    """
+    if src.startswith(("http://", "https://")):
+        resp = requests.get(src, stream=True)
+        resp.raise_for_status()
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "wb") as f:
+            for chunk in resp.iter_content(chunk_size=8192):
+                f.write(chunk)
+        return dest
+    return Path(src)
 
 def upload_image_asset(image_url: str):
     resp = client.media.upload.create(
@@ -31,63 +49,49 @@ def generate_lip_sync_video(image_asset_id: str, audio_asset_id: str) -> str:
 client = RunwayML(api_key=settings.RUNWAY_API_KEY)
 
 def generate_image_video(
-    image_data_uri: str,
+    image_path_or_uri: str,
     prompt_text: str,
     model: str = "gen3a_turbo",
-    ratio: str = "1280:720",
+    ratio: str = "1280:768",
     duration: int = 10
 ) -> str:
+    if os.path.isfile(image_path_or_uri):
+        # 로컬 파일이라면 base64 data URI 로 변환
+        ext = image_path_or_uri.split(".")[-1]
+        with open(image_path_or_uri, "rb") as f:
+            b64 = base64.b64encode(f.read()).decode()
+        prompt_image = f"data:image/{ext};base64,{b64}"
+    else:
+        # data URI 혹은 원격 URL 그대로 쓰기
+        prompt_image = image_path_or_uri
+
+
     task = client.image_to_video.create(
         model=model,
-        prompt_image=image_data_uri,  # Data URI 그대로 전달
+        prompt_image=prompt_image,
         prompt_text=prompt_text,
         ratio=ratio,
         duration=duration
     ).wait_for_task_output()
-    result = task.model_dump() if hasattr(task, 'model_dump') else (task.dict() if hasattr(task, 'dict') else task)
-    # output 키가 비디오 URI 리스트 또는 문자열로 반환됨
-    output = result.get('output') if isinstance(result, dict) else None
+
+    result = (
+        task.model_dump()
+        if hasattr(task, "model_dump") else
+        (task.dict() if hasattr(task, "dict") else task)
+    )
+    output = result.get("output") if isinstance(result, dict) else None
+
     if isinstance(output, list) and output:
-        return output[0]
-    if isinstance(output, str):
-        return output
-    raise RuntimeError(f"No video URI found in TaskRetrieveResponse; available keys: {list(result.keys())}")
+        remote_url = output[0]
+    elif isinstance(output, str):
+        remote_url = output
+    else:
+        raise RuntimeError(f"No video URI in Runway response: {result}")
 
-BASE_DIR = os.path.dirname(__file__)
+    output_dir = Path("C:/upload_files/memory_video")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    filename = f"{uuid.uuid4().hex}.mp4"
+    local_path = output_dir / filename
+    _download_if_url(remote_url, local_path)
 
-# def start():
-#     print("▶️ start() 진입했습니다")
-#     image_path = os.path.join(BASE_DIR, ".jpg")
-#     prompt = "저 사진 안의 사람이 서럽게 우는 영상 만들어줘"
-#
-#     print(f"image_path: {image_path} (존재: {os.path.isfile(image_path)})")
-#     if not os.path.isfile(image_path):
-#         print("❌ 파일을 찾을 수 없습니다.")
-#         return
-#
-#     # 1) 로컬 파일 → Base64 Data URI 변환
-#     with open(image_path, "rb") as f:
-#         b64 = base64.b64encode(f.read()).decode()
-#     data_uri = f"data:image/jpeg;base64,{b64}"
-#     print("✅ Data URI 생성, 길이:", len(data_uri))
-#
-#     # 2) 바로 비디오 생성 호출
-#     print("비디오 생성 파라미터:", {
-#         "model": "gen3a_turbo",
-#         "ratio": "1280:768",
-#         "duration": 10
-#     })
-#     try:
-#         uri = generate_image_video(
-#             image_data_uri=data_uri,
-#             prompt_text=prompt,
-#             model="gen3a_turbo",
-#             ratio="1280:768",
-#             duration=10
-#         )
-#         print("✅ 비디오 생성 완료! URI:", uri)
-#     except TaskFailedError as e:
-#         print("❌ Runway 작업 실패:", e)
-#     except Exception as e:
-#         print("❌ 예기치 않은 오류 발생:", e)
-
+    return f"/memory_video/{filename}"
