@@ -3,6 +3,10 @@ from app.schemas.atelier_schema import (
     OpenaiGenerationRequest, PromptRefinementResponse,
     TtsConfigRequest, TtsConfigResponse )
 from app.services.atelier.prompt_service import PromptRefiner
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 router = APIRouter()
 _refiner = PromptRefiner()
@@ -53,17 +57,21 @@ async def generate_sound_prompt(image_raw: str = Form(...)):
     response_model=TtsConfigResponse,
 )
 async def generate_tts_config(req: TtsConfigRequest):
+    logger.info("▶▶ generate-tts-config called, payload: %r", req)
+
     try:
         cfg: dict = _refiner.refine_tts_config(
             script=req.script,
-            voice_gender=req.voice_gender
+            voice_gender=req.voiceGender
         )
     except Exception as e:
         raise HTTPException(502, f"TTS 설정 분석 실패: {e}")
 
+    logger.info("▶▶ refine_tts_config returned: %r", cfg)
+
     return TtsConfigResponse(
         voice_id=cfg["voice_id"],
         model_id=cfg["model_id"],
-        pitch=cfg["pitch"],
-        rate=cfg["rate"],
+        stability=cfg["stability"],
+        similarity_boost=cfg["similarity_boost"],
     )

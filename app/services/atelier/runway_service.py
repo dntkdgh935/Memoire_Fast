@@ -20,6 +20,7 @@ def _download_if_url(src: str, dest: Path) -> Path:
         resp.raise_for_status()
         dest.parent.mkdir(parents=True, exist_ok=True)
         with open(dest, "wb") as f:
+
             for chunk in resp.iter_content(chunk_size=8192):
                 f.write(chunk)
         return dest
@@ -39,14 +40,29 @@ def upload_audio_asset(audio_bytes: bytes):
     )
     return resp.asset_id
 
-def generate_lip_sync_video(image_asset_id: str, audio_asset_id: str) -> str:
-    task = client.lipsync.create(
-        image_assetId=image_asset_id,
-        audio_assetId=audio_asset_id
+def generate_lip_sync_video(image_url: str, tts_url: str) -> str:
+    task = client.character_performance.create(
+        image=image_url,
+        audio=tts_url
     ).wait_for_task_output()
-    return task["video_uri"]
 
-client = RunwayML(api_key=settings.RUNWAY_API_KEY)
+    if not task.output or len(task.output) == 0:
+        raise RuntimeError("영상 생성 실패: 출력이 없습니다.")
+
+    video_url = task.output[0]
+
+    output_dir = Path("C:/upload_files/memory_video")
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    filename = f"{uuid.uuid4().hex}.mp4"
+    local_path = output_dir / filename
+
+    resp = requests.get(video_url)
+    with open(local_path, "wb") as f:
+        f.write(resp.content)
+
+    return f"/memory_video/{filename}"
+
 
 def generate_image_video(
     image_path_or_uri: str,
@@ -90,6 +106,7 @@ def generate_image_video(
 
     output_dir = Path("C:/upload_files/memory_video")
     output_dir.mkdir(parents=True, exist_ok=True)
+
     filename = f"{uuid.uuid4().hex}.mp4"
     local_path = output_dir / filename
     _download_if_url(remote_url, local_path)
