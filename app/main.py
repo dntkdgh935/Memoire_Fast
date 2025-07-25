@@ -55,7 +55,7 @@ from app.api.endpoints.library_router import router as library_router
 app.include_router(library_router, prefix="/library", tags=["Library"])
 
 app.mount("/memory_video", StaticFiles(directory="C:/upload_files/memory_video"), name="memory_video")
-
+app.mount( "/upload_files", StaticFiles(directory="C:/upload_files"), name="upload_files")
 @app.get("/")
 async def ping():
     return {"message": "pong"}

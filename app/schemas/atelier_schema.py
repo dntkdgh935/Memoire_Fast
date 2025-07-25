@@ -59,13 +59,6 @@ class ImageResultDto(BaseModel):
     collectionId: int
     memoryOrder: int
 
-class ElevenlabsGenerationRequest(BaseModel):
-    prompt: str
-    speech: str
-
-class ElevenlabsGenerationResponse(BaseModel):
-    audio_url: str
-
 
 class RunwayGenerationRequest(BaseModel):
     image_url: str
@@ -116,9 +109,8 @@ class PromptRefinementResponse(BaseModel):
 
 # sync 모델 사용 안할 경우 영상 생성 Request
 class VideoPipelineRequest(BaseModel):
-    # 로컬 이미지 파일 경로 또는 URL
     image_url: str
-    prompt: str
+    prompt: Optional[str] = None
     tts_url: Optional[str] = None
 
 class VideoPipelineResponse(BaseModel):
@@ -142,16 +134,16 @@ class TtsConfigRequest(BaseModel):
 class TtsConfigResponse(BaseModel):
     voice_id: str
     model_id: str
-    pitch: float
-    rate: float
+    stability: float
+    similarity_boost: float
 
 # elevenlabs 부분
 class TtsGenerateRequest(BaseModel):
     speech: str
     voice_id: str
     model_id: str
-    pitch: float
-    rate: float
+    stability: float
+    similarity_boost: float
 
 class TtsGenerateResponse(BaseModel):
     audio_url: str
