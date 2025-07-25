@@ -71,4 +71,87 @@ class PromptRefiner:
 
         return self._chat_refine(system, user_prompt, max_tokens=200)
 
+    def _chat_refine(self, system_prompt: str, user_input: str, max_tokens: int = 60) -> str:
+        backoff = 0.5
+        for _ in range(6):
+            try:
+                resp = self.client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_input},
+                    ],
+                    temperature=0.2,
+                    max_tokens=max_tokens
+                )
+                return resp.choices[0].message.content.strip()
+            except RateLimitError:
+                time.sleep(backoff)
+                backoff *= 2
+            except OpenAIError as e:
+                raise e
+        raise RateLimitError("Exceeded max retries in PromptRefiner._chat_refine")
 
+def refine_tts_config(self, script: str, voice_gender: str) -> dict:
+
+        system_prompt = """
+You are an expert TTS prompt engineer. 
+Choose the most suitable voice_id from the ElevenLabs Starter‑plan voices listed below, based on the user's desired gender and the style/mood of their script. 
+Use model_id "eleven_multilingual_v2" for all outputs. 
+Also recommend a pitch (float) and rate (float) for natural, expressive speech. 
+Respond ONLY with a JSON object exactly in this format (no extra text):
+{"voice_id":"<Voice ID>","model_id":"eleven_multilingual_v2","pitch":<float>,"rate":<float>}
+
+Available voices:
+- Adam (pNInz6obpgDQGcFmaJgB): deep, weighty male US accent for documentary/narration
+- Alice (Xb7hH8MSUJpSbSDYk0k2): confident female UK accent for news/tutorial
+- Antoni (ErXwobaYiN019PkySvjV): young balanced male US accent, all‑purpose
+- Arnold (VR6AewLTigWG4xSOukaG): middle‑aged male, clear for corporate/brand
+- Bill (pqHfZKP75CvOlQylNhV4): bold, mature male voice for documentary/voice‑over
+- Brian (nPczCjzI2devNBz1zQrb): low, rich mature male voice for trustworthy explanatory content
+- Callum (N2lVS1w4EtoT3dr4eOWO): rough middle‑aged male voice, US accent, for game characters or special effects
+- Charlie (IKne3meq5aSn9XLyUdCD): casual middle‑aged male Australian accent for friendly tutorials
+- Charlotte (XB0fDUnXU5powFXDhCwa): enchanting middle‑aged female Eng‑Swedish accent for cinematic/fantasy characters
+- Chris (iP95p4xoKVk53GoZ742B): comfortable middle‑aged male US accent for radio‑style content
+- Clyde (2EiwWnXFnvU5JabPnv8n): veteran warrior‑like male US accent for action/game narration
+- Daniel (onwK4e9ZLuTAKqWW03F9): deep authoritative male UK accent for news/official announcements
+- Dave (CYw3kZ02Hs0563khs1Fj): young male Bristol/Essex UK accent for friendly branded content
+- Domi (AZnzlk1XvdvE nXmlld): powerful clear young female US accent for strong brand messages/ads
+- Dorothy (ThT5KcBeYPX3keUQqHPh): gentle young female UK accent for children’s stories
+- Drew (29vD33N1CtxCmqQRPOHJ): balanced middle‑aged male US accent, versatile for news/narration
+- Emily (LcfcDJNUP1GQjkzn1xUU): calm clear young female US accent for meditation/relaxation content
+- Ethan (g5CIjZEefAph4nQFvHAz): soft young male US accent for ASMR/quiet audiobooks
+- Fin (D38z5RcWu1voky8WS1ja): hearty mature male Irish accent for nautical/fantasy characters
+- Freya (jsCqWAovK2LkecY7zXl4): bright young female US accent for podcasts/vlogs
+- George (JBFqnCBsd6RMkjVDRZzb): gritty middle‑aged male UK accent for unique narration/game characters
+- Gigi (jBpfuIE2acCO8z3wKNLl): child‑like young female US accent for animation/children’s content
+- Giovanni (zcAOhNBS3c14rBihAFp1): young male with Italian inflection for foreign‑language/atmospheric content
+- Glinda (z9fAnlkpzviPz146aGWa): witch‑like fantasy middle‑aged female US accent for storytelling
+- Grace (oWAxZDx7w5VEj9dCyTzz): Southern‑tinged cheerful young female US accent for audiobooks/storytelling
+- Harry (SOYHLrjzK2X1ezoPC6cr): tense young male US accent for game characters/dramatic content
+- James (ZQe5CZNOzWyzPSCn5a3c): calm middle‑aged male Australian accent for news/documentary
+- Jeremy (bVMeCyTHy58xNoL34h3p): bright energetic young male Irish accent for presentations/ads
+- Jessie (t0jbNlBVZ17f02VDIeMI): rough middle‑aged male US accent for character voices/games
+- Joseph (Zlb1dXrM653N07WRdFW3): formal middle‑aged male UK accent for official/news content
+- Josh (TxGEqnHWrfWFTfGW9XjX): rich young male US accent for impactful narration
+- Liam (TX3LPaxmHKxFdv7VOQHJ): clean young male US accent for all‑purpose/brand content
+- Lily (pFZP5JQG7iQjIQuC4Bku): edgy middle‑aged female UK accent for character voices
+- Matilda (XrExE9yKIg1WjnnlVkGX): warm young female US accent for audiobooks/storytelling
+- Michael (flq6f7yk4E4fJM5XTYuZ): mature deep male US accent for audiobooks/documentary
+- Mimi (zrHiDhphv9ZnVXBqCLjz): playful child‑like young female accent for animation/children’s content
+- Nicole (piTKgcLEGmPE4e6mEKli): whispery intimate female US accent for ASMR/audiobooks
+- Patrick (ODq5zmih8GrVes37Dizd): forceful shouting middle‑aged male US accent for high‑energy game/ad content
+- Paul (5Q0t7uMcjvnagumLfvZi): on‑the‑scene reporter male US accent for news/documentary reporting
+- Rachel (21m00Tcm4TlvDq8ikWAM): calm clear young female US accent for soft narration
+- Sam (yoZ06aMxZJJ28mfd3POQ): rough young male US accent for unique brand/game voices
+- Sarah (EXAVITQu4vr4xnSDxMaL): smooth clear young female US accent for friendly guidance/news narration
+- Serena (pMsXgVXv3BLzUgSXRplE): gentle middle‑aged female US accent for interactive guides/chatbots
+- Thomas (GBv7mTt0atIp3Br8iCZE): calm young male US accent for meditation/relaxation content
+- Santa Claus (knrPHWnBmmDHMoiMeP3l): hearty elderly male US accent specialized for holiday/Christmas content
+"""
+        user_input = 'script: "{}"\nvoice_gender: "{}"'.format(
+            script.replace('\\', '\\\\').replace('"', '\\"'),
+            voice_gender
+        )
+        raw = self._chat_refine(system_prompt, user_input, max_tokens=200)
+        return json.loads(raw)

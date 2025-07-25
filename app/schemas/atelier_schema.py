@@ -1,5 +1,5 @@
 from pydantic import BaseModel, HttpUrl
-from typing import Optional
+from typing import Optional, Literal
 
 
 class ComposeRequest(BaseModel):
@@ -133,3 +133,25 @@ class MediaPipelineRequest(BaseModel):
 
 class MediaPipelineResponse(BaseModel):
     final_video_url: str
+
+# tts 스크립트 호출
+class TtsConfigRequest(BaseModel):
+    script: str
+    voiceGender: Literal["female", "male"]
+
+class TtsConfigResponse(BaseModel):
+    voice_id: str
+    model_id: str
+    pitch: float
+    rate: float
+
+# elevenlabs 부분
+class TtsGenerateRequest(BaseModel):
+    speech: str
+    voice_id: str
+    model_id: str
+    pitch: float
+    rate: float
+
+class TtsGenerateResponse(BaseModel):
+    audio_url: str

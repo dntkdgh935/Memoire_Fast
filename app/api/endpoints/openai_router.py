@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException, Form
-from app.schemas.atelier_schema import OpenaiGenerationRequest
+from app.schemas.atelier_schema import (
+    OpenaiGenerationRequest, PromptRefinementResponse,
+    TtsConfigRequest, TtsConfigResponse )
 from app.services.atelier.prompt_service import PromptRefiner
-from app.schemas.atelier_schema import PromptRefinementResponse
 
 router = APIRouter()
 _refiner = PromptRefiner()
@@ -45,3 +46,24 @@ async def generate_sound_prompt(image_raw: str = Form(...)):
         return {"prompt": prompt}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"자연음 프롬프트 생성 실패: {e}")
+
+# eleven 프롬프트 생성 부분
+@router.post(
+    "/generate-tts-config",
+    response_model=TtsConfigResponse,
+)
+async def generate_tts_config(req: TtsConfigRequest):
+    try:
+        cfg: dict = _refiner.refine_tts_config(
+            script=req.script,
+            voice_gender=req.voice_gender
+        )
+    except Exception as e:
+        raise HTTPException(502, f"TTS 설정 분석 실패: {e}")
+
+    return TtsConfigResponse(
+        voice_id=cfg["voice_id"],
+        model_id=cfg["model_id"],
+        pitch=cfg["pitch"],
+        rate=cfg["rate"],
+    )
