@@ -25,7 +25,7 @@ async def generate_image_video_local(
 @router.post("/generate-lip-sync-video", response_model=RunwayGenerationResponse)
 async def generate_lip_sync_video_endpoint(request: RunwayGenerationRequest):
     try:
-        url = generate_lip_sync_video(request.image_url, request.tts_url)
+        url = generate_lip_sync_video(image_url=request.image_url, tts_url=request.tts_url)
         return RunwayGenerationResponse(video_url=url)
     except Exception as e:
         raise HTTPException(500, f"립싱크 생성 실패: {e}")

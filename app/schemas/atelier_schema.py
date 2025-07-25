@@ -62,7 +62,7 @@ class ImageResultDto(BaseModel):
 
 class RunwayGenerationRequest(BaseModel):
     image_url: str
-    prompt: str
+    prompt: Optional[str] = None
     tts_url: Optional[str] = None
 
 class RunwayGenerationResponse(BaseModel):
