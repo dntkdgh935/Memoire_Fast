@@ -23,10 +23,6 @@ def generate_tts(speech: str, voice_id: str = "EXAVITQu4vr4xnSDxMaL", model_id: 
     except Exception as e:
         print("❌ 음성 생성 실패:", e)
         raise
-#
-# if __name__ == "__main__":
-#     text = "안녕하세요. 반갑습니다. 저 내일 휴가 쓰고 싶어요."
-#     generate_tts(text)
 
 
 
