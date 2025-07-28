@@ -5,6 +5,7 @@ import requests
 from app.core.config import settings
 from io import BytesIO
 import tempfile
+import shutil
 from pathlib import Path
 
 HEADERS = {
@@ -51,6 +52,37 @@ def _download_if_url(src: str, dest: Path) -> Path:
         return dest
     return Path(src)
 
+def download_or_local(src: str, dest: Path) -> Path:
+    # 1) localhost:8000/upload_files → C:/upload_files
+    if src.startswith("http://localhost:8000/upload_files"):
+        rel = src.replace("http://localhost:8000/upload_files", "")
+        full = Path("C:/upload_files") / rel.lstrip("/")
+        if full.exists():
+            return full
+        raise FileNotFoundError(full)
+
+    if src.startswith("/upload_files/"):
+        full = Path("C:/upload_files") / src.lstrip("/")
+        if full.exists():
+            return full
+        raise FileNotFoundError(full)
+
+        # 3) 그 외 URL이면 다운로드
+    if src.startswith(("http://", "https://")):
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with requests.get(src, stream=True) as r:
+            r.raise_for_status()
+            with open(dest, "wb") as f:
+                shutil.copyfileobj(r.raw, f)
+        return dest
+
+        # 4) 로컬 경로
+    full = Path(src)
+    if full.exists():
+        return full
+    raise FileNotFoundError(src)
+
+
 def get_mime_type(file_path: str) -> str:
     if file_path.endswith(".jpg") or file_path.endswith(".jpeg"):
         return "image/jpeg"
@@ -75,9 +107,13 @@ def upload_asset(src: bytes, name: str) -> str:
 
     resp = requests.post(api_url, headers=headers, data=src)
     resp.raise_for_status()
-    asset_id = resp.json()["id"]
-    print(f"✅ Asset 업로드 완료: {asset_id}")
-    return asset_id
+    data = resp.json()
+
+    asset_key = data.get("assetId")
+    if not asset_key:
+        raise RuntimeError(f"Asset 업로드 실패: {data}")
+    print(f"✅ Asset 업로드 완료: {asset_key}")
+    return asset_key
 
 def generate_lip_sync_video(image_url: str, audio_url: str) -> str:
     print("image_url", image_url, "audio_url", audio_url)
@@ -87,10 +123,10 @@ def generate_lip_sync_video(image_url: str, audio_url: str) -> str:
     image_asset = upload_asset(img_bytes, name="face.png")
     print("image_asset 완료")
 
-    tmp_dir    = Path(tempfile.mkdtemp())
-    tts_file = _download_if_url(audio_url, tmp_dir / "tts.mp3")
-    audio_bytes = tts_file.read_bytes()
-    audio_asset = upload_asset(audio_bytes, name=tts_file.name)
+    tmp = Path(tempfile.mkdtemp())
+    audio_file = download_or_local(audio_url, tmp / "tts.mp3")
+    audio_bytes = audio_file.read_bytes()
+    audio_asset = upload_asset(audio_bytes, name=audio_file.name)
     print("audio_asset 완료")
 
     payload = {
@@ -104,8 +140,10 @@ def generate_lip_sync_video(image_url: str, audio_url: str) -> str:
         headers=HEADERS,
         json=payload
     )
-    if res.status_code != 200:
-        raise RuntimeError(f"❌ 작업 생성 실패: {res.status_code}, {res.text}")
+
+    # 디버그용: 응답 상태와 본문을 먼저 찍습니다
+    print(f"💬 립싱크 응답 상태: {res.status_code}")
+    print(f"💬 립싱크 응답 본문: {res.text}")
 
     res.raise_for_status()
     task_id = res.json()["taskId"]
