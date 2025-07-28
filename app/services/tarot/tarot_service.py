@@ -7,27 +7,34 @@ client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
 def generate_reading(spread_type: str, cards: list[dict]) -> str:
     """
-    동기 방식으로 AI 리딩을 생성합니다.
+    신비로운 마법사 스타일로 AI 타로 리딩 생성 (동기 방식)
     """
-    # 카드 목록 문자열 만들기
-    card_lines = "\n".join(
-        f"- {c['name']}: {', '.join(c['keywords'])}"
-        for c in cards
-    )
-    user_prompt = (
-        f"{spread_type}장 스프레드로 뽑힌 카드 목록:\n"
-        f"{card_lines}\n\n"
-        "각 카드의 의미와 전체 리딩을 한국어로 간결히 설명해주세요."
-    )
+    # 카드 이름만 쉼표로 이어 붙이기
+    card_names = ", ".join([c["name"] for c in cards])
 
-    # 동기 create 호출 (await 제거)
+    # 마법사 스타일 프롬프트
+    prompt = f"""
+너는 고대의 신비로운 마법사로, 타로 카드의 기운을 해석해주는 예언자다.
+지금 사용자가 {spread_type}장의 카드를 뽑았으며, 그 목록은 다음과 같다: {card_names}
+
+각 카드에 대해 다음 규칙을 지켜 서술하라:
+- 카드 이름을 문장 안에 자연스럽게 녹여서 사용하라
+- 번호, 기호(**, -, 1., 등) 없이 자연스러운 단락으로 서술하라
+- 각 카드 설명은 2~3문장으로 조용하고 예언자처럼 말하라
+- 마지막엔 전체 흐름을 설명하는 '전체 리딩' 문단을 덧붙여라 (줄바꿈 포함, 4~5문장)
+
+출력은 순수한 자연어로만 구성하라. HTML, Markdown, 리스트, 기호 없이 순수하게.
+    """.strip()
+
+    # GPT 요청
     resp = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": "당신은 전문 타로 리더입니다."},
-            {"role": "user",   "content": user_prompt},
+            {"role": "system", "content": "너는 조용하고 신비로운 고대의 마법사다. 타로의 상징과 기운을 해석하여 말해준다."},
+            {"role": "user", "content": prompt}
         ],
-        max_tokens=500
+        max_tokens=1200,  # ← 여기서 길이 제한 조절
+        temperature=0.9   # 약간 더 창의적인 말투 허용
     )
 
     return resp.choices[0].message.content.strip()
