@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, Form
 from app.schemas.atelier_schema import (
-    OpenaiGenerationRequest, PromptRefinementResponse,
     TtsConfigRequest, TtsConfigResponse )
 from app.services.atelier.prompt_service import PromptRefiner
+from app.services.atelier.voiceId_service import sanitize_voice_id
 import logging
 
 logger = logging.getLogger(__name__)
@@ -64,6 +64,11 @@ async def generate_tts_config(req: TtsConfigRequest):
             script=req.script,
             voice_gender=req.voiceGender
         )
+        try:
+            cfg["voice_id"] = sanitize_voice_id(cfg["voice_id"])
+        except ValueError as e:
+            logger.warning(f"⚠️ 잘못된 voice_id 입력됨: {cfg['voice_id']}")
+            raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(502, f"TTS 설정 분석 실패: {e}")
 
