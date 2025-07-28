@@ -229,7 +229,7 @@ async def compare_embeddings(request: CompareEmbeddingsRequest):
     best_match_index = np.argmin(face_distances)
     min_distance = face_distances[best_match_index]
 
-    TOLERANCE = 0.45
+    TOLERANCE = 0.10
     logger.info(f"최소 거리: {min_distance}, TOLERANCE: {TOLERANCE}")
 
     if min_distance < TOLERANCE:
