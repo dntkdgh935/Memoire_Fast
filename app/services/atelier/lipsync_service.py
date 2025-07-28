@@ -13,8 +13,8 @@ HEADERS  = {
 }
 
 FILE_HEADERS = {
-    "X-RapidAPI-Key": "a469bc4124msh2a54debc3d2f590p1360d6jsna25f53b5c11d",
-    "X-RapidAPI-Host": "runwayml-api.p.rapidapi.com"
+    "x-rapidapi-key": "a469bc4124msh2a54debc3d2f590p1360d6jsna25f53b5c11d",
+    "x-rapidapi-host": "runwayml-api.p.rapidapi.com"
 }
 
 def _download_if_url(src: str, dest: Path) -> Path:
@@ -42,21 +42,37 @@ def get_mime_type(file_path: str) -> str:
     else:
         raise ValueError("지원되지 않는 파일 형식입니다.")
 
-def upload_asset(url: str) -> str:
-    print(url)
-    r = requests.post(url, headers=HEADERS)
-    r.raise_for_status()
-    resp = requests.get(url)
-    resp.raise_for_status()
-    # 파일명과 MIME 타입은 실제 파일에 맞춰 세팅하세요
-    files = {"file": (url.split("/")[-1], BytesIO(resp.content), "image/jpeg")}
-    r = requests.post(
+def upload_asset(src: str) -> str:
+    print(src)
+
+    if src.startswith(("http://", "https://")):
+        resp = requests.get(src, stream=True)
+        resp.raise_for_status()
+        data = resp.content
+        filename = os.path.basename(src)
+    else:
+        path = Path(src)
+        if not path.is_file():
+            raise FileNotFoundError(f"파일을 찾을 수 없습니다: {path}")
+        data = path.read_bytes()
+        filename = path.name
+
+    mime = get_mime_type(filename)
+
+    files = {
+        "file": (filename, BytesIO(data), mime)
+    }
+
+    res = requests.post(
         "https://runwayml-api.p.rapidapi.com/assets/",
-        headers=HEADERS,
+        headers=FILE_HEADERS,
         files=files
     )
-    r.raise_for_status()
-    return r.json()["id"]
+    res.raise_for_status()
+    asset_id = res.json().get("id")
+    if not asset_id:
+        raise RuntimeError(f"Asset upload 실패, 응답: {res.text}")
+    return asset_id
 
     # if not res.ok:
     #     print("❌ Asset upload failed:", res.status_code, res.text)
