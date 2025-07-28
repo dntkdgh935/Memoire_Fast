@@ -115,6 +115,39 @@ def upload_asset(src: bytes, name: str) -> str:
     print(f"✅ Asset 업로드 완료: {asset_key}")
     return asset_key
 
+def poll_lipsync_task(task_id: str,
+                      timeout: int = 300,
+                      interval: int = 5) -> str:
+    """
+    taskId가 SUCCEEDED 상태가 될 때까지 최대 timeout초 동안
+    interval초 간격으로 상태를 조회합니다.
+    성공 시 artifacts[0]['url'] 을 반환, 실패 시 예외를 던집니다.
+    """
+    start = time.time()
+    url   = f"https://api.useapi.net/v1/runwayml/tasks/{task_id}"
+    while True:
+        if time.time() - start > timeout:
+            raise TimeoutError(f"Lip‑sync polling timed out after {timeout}s")
+
+        res = requests.get(url, headers=HEADERS)
+        res.raise_for_status()
+        data = res.json()
+        status = data.get("status")
+
+        if status == "SUCCEEDED":
+            artifacts = data.get("artifacts", [])
+            if artifacts:
+                return artifacts[0]["url"]
+            raise RuntimeError("Lip‑sync succeeded but no artifacts found")
+
+        if status == "FAILED":
+            err = data.get("error") or data
+            raise RuntimeError("Lip‑sync failed:", err)
+
+        # 아직 진행 중
+        print(f"🔄 상태 {status}. 다음 확인까지 {interval}s 대기")
+        time.sleep(interval)
+
 def generate_lip_sync_video(image_url: str, audio_url: str) -> str:
     print("image_url", image_url, "audio_url", audio_url)
     link_runway_account()
@@ -149,17 +182,8 @@ def generate_lip_sync_video(image_url: str, audio_url: str) -> str:
     task_id = res.json()["taskId"]
     print("✅ 작업 생성됨. taskId:", task_id)
 
-    print("⏳ 결과 대기 중...")
-    while True:
-        task_res = requests.get(f"https://api.useapi.net/v1/tasks/{task_id}", headers=HEADERS)
-        data = task_res.json()
-        if data["status"] == "SUCCEEDED":
-            video_url = data["artifacts"][0]["url"]
-            break
-        elif data["status"] == "FAILED":
-            raise RuntimeError("립싱크 실패", data.get("error"))
-        time.sleep(5)
-
+    print("⏳ Lip‑sync 완료 대기 중…")
+    video_url = poll_lipsync_task(task_id, timeout=180, interval=5)
 
     output_dir = Path("C:/upload_files/memory_video")
     output_dir.mkdir(parents=True, exist_ok=True)
