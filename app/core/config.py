@@ -8,8 +8,9 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str
     RUNWAY_API_KEY: str
     ELEVENLABS_API_KEY: str
-    MUBERT_API_KEY: str
-    FFMPEG_PATH: str = "ffmpeg"  # 도커에 ffmpeg 설치시 기본 이름
+    USEAPI_TOKEN: str
+    RUNWAY_EMAIL: str
+    RUNWAY_PASSWORD: str
 
 
     model_config = SettingsConfigDict(

@@ -14,6 +14,7 @@ async def create_lip_sync_video(
     audio_url: str = Body(..., embed=True),
 ):
     try:
+        print("image_url", image_url, "audio_url", audio_url)
         video_url = generate_lip_sync_video(image_url, audio_url)
         return LipSyncResponse(video_url=video_url)
 

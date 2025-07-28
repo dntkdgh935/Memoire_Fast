@@ -56,6 +56,11 @@ app.include_router(library_router, prefix="/library", tags=["Library"])
 
 app.mount("/memory_video", StaticFiles(directory="C:/upload_files/memory_video"), name="memory_video")
 app.mount( "/upload_files", StaticFiles(directory="C:/upload_files"), name="upload_files")
+app.mount(
+    "/upload_files/tts",
+    StaticFiles(directory="C:/upload_files/tts"),
+    name="tts"
+)
 @app.get("/")
 async def ping():
     return {"message": "pong"}
