@@ -109,9 +109,18 @@ class PromptRefiner:
     Do **not** always pick the extremes (0.0 or 1.0).  
     Instead, adjust stability and similarity_boost to match the script’s mood and delivery pace:  
     - For calm, steady narration, use mid-to-high stability (e.g. 0.6–0.9) and low-to-mid similarity_boost (e.g. 0.2–0.5).  
-    - For energetic or emotional speech, lower stability slightly (e.g. 0.3–0.6) and raise similarity_boost (e.g. 0.6–0.9).  
-    - **For voice_id**, do **not** output the human‑readable name (like “Bill”). 
-    Always output the identifier in parentheses that follows the name, e.g. `"pqHfZKP75CvOlQylNhV4"`.
+    - For energetic or emotional speech, lower stability slightly (e.g. 0.3–0.6) and raise similarity_boost (e.g. 0.6–0.9).
+      
+    🛑 **For voice_id**, you must output **only the raw voice ID**, with no name and no parentheses.      
+    For example, if the voice is listed as:  
+      - Clyde (**N2lU4FOgS3EqOtLSv0xJ**) ← Example mapping  
+    Then your output must be exactly: `"N2lU4FOgS3EqOtLSv0xJ"` ← ✅  
+    
+    Do not output:
+    - "Clyde" ← ❌
+    - "Clyde (N2lU4FOgS3EqOtLSv0xJ)" ← ❌
+    - "(N2lU4FOgS3EqOtLSv0xJ)" ← ❌
+    
   
     Respond **only** with a JSON object exactly in this format (no extra text):
     {"voice_id":"<Voice ID>","model_id":"eleven_multilingual_v2","stability":<float>,"similarity_boost":<float>}

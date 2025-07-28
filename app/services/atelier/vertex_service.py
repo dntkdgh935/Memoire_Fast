@@ -1,6 +1,7 @@
 # app/services/atelier/vertex_service.py
 
 from io import BytesIO
+import uuid
 import openai
 import base64
 import requests
@@ -12,6 +13,7 @@ from app.services.atelier.prompt_service import PromptRefiner
 _refiner = PromptRefiner()
 
 openai.api_key = settings.OPENAI_API_KEY
+MAX_SIZE_BYTES = 200 * 1024 * 1024
 
 def edit_with_gpt_image_base64(
     image_path: str,
@@ -58,15 +60,25 @@ def edit_with_gpt_image_base64(
         )
     print(f"[im2im] OpenAI images.edit returned {len(resp.data)} items")
 
+    output_dir = Path("C:/upload_files/memory_img")
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     out_urls = []
     for idx, data in enumerate(resp.data):
         b64 = data.b64_json
         img_bytes = base64.b64decode(b64)
-        out = Path("out")/f"styled_{idx}.png"
-        out.parent.mkdir(exist_ok=True)
-        out.write_bytes(img_bytes)
-        out_urls.append(str(out.resolve()))
-        print(f"[im2im] wrote output[{idx}]: {out}")
+        out = f"{uuid.uuid4().hex}.png"
+        local_path = output_dir / out
+        local_path.write_bytes(img_bytes)
+
+        # 용량 검사
+        size = local_path.stat().st_size
+        if size > MAX_SIZE_BYTES:
+            print(f"[im2im] ❌ 파일 {out}이 200MB 초과: {(size / 1024 / 1024):.2f}MB")
+            raise ValueError(f"생성된 이미지가 200MB를 초과했습니다: {(size / 1024 / 1024):.2f}MB")
+
+        out_urls.append(f"/upload_files/memory_img/{out}")
+        print(f"[im2im] wrote output[{idx}]: {local_path}")
 
 
     return out_urls

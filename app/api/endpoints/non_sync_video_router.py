@@ -1,17 +1,16 @@
 # === api/endpoints/non_sync_video_router.py ===
 import os
 import time
+import requests
+from io import BytesIO
 from fastapi import APIRouter, HTTPException, Body
 import openai
+from PIL import Image
 from app.schemas.atelier_schema import (
-    VideoPipelineRequest, VideoPipelineResponse,
-    MediaPipelineRequest, MediaPipelineResponse
+    VideoPipelineRequest, VideoPipelineResponse
 )
 from app.services.atelier.prompt_service import PromptRefiner
 from app.services.atelier.runway_service import generate_image_video
-from app.services.atelier.visionapi_service import analyze_image
-from app.services.atelier.stable_service import generate_stable_audio_file
-from app.services.atelier.ffmpeg_service import merge_assets
 
 router = APIRouter()
 _refiner = PromptRefiner()
@@ -47,9 +46,31 @@ async def non_sync_video_pipeline(
 
     # Runway로 영상 생성
     try:
-        video_url = generate_image_video(image_path, refined_prompt)
+        best_ratio = get_best_ratio(image_path)
+        print("best_ratio:", best_ratio)
+        video_url = generate_image_video(image_path, refined_prompt, best_ratio)
         print("video_url : ", video_url)
         return VideoPipelineResponse(video_url=video_url)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Video generation failed: {e}")
 
+
+def get_best_ratio(image_path_or_uri: str) -> str:
+    print("start ratio>>>>>>>>>>>>")
+    if os.path.isfile(image_path_or_uri):
+        with Image.open(image_path_or_uri) as img:
+            w, h = img.size
+    else:
+        response = requests.get(image_path_or_uri)
+        response.raise_for_status()
+        img = Image.open(BytesIO(response.content))
+        w, h = img.size
+
+    ratio = w / h
+
+    if ratio < 1:
+        # 세로가 더 길면 세로형
+        return "768:1280"
+    else:
+        # 가로가 더 길거나 정사각형에 가까우면 가로형
+        return "1280:768"

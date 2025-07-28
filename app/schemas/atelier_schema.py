@@ -2,14 +2,12 @@ from pydantic import BaseModel, HttpUrl
 from typing import Optional, Literal
 
 
-class ComposeRequest(BaseModel):
+class LipSyncRequest(BaseModel):
     image_url: HttpUrl
-    background_prompt: str
-    music_prompt: str
-    tts_text: str
+    audio_url: HttpUrl
 
-class ComposeResponse(BaseModel):
-    video_path: str
+class LipSyncResponse(BaseModel):
+    video_url: str
 
 class TextGenerationRequest(BaseModel):
     content: str
@@ -62,11 +60,12 @@ class ImageResultDto(BaseModel):
 
 class RunwayGenerationRequest(BaseModel):
     image_url: str
-    prompt: str
-    tts_url: Optional[str] = None
+    tts_url: str
 
 class RunwayGenerationResponse(BaseModel):
     video_url: str
+
+
 
 
 class OpenaiGenerationRequest(BaseModel):
@@ -79,10 +78,9 @@ class OpenaiGenerationResponse(BaseModel):
 class FfmpegGenerationRequest(BaseModel):
     video_url: str
     tts_url: str
-    # music_url: str
 
 class FfmpegGenerationResponse(BaseModel):
-    processed_video_url: str
+    video_url: str
 
 
 class VertexGenerationRequest(BaseModel):
@@ -91,21 +89,6 @@ class VertexGenerationRequest(BaseModel):
 
 class VertexGenerationResponse(BaseModel):
     generated_image_url: str
-
-
-class StableGenerationRequest(BaseModel):
-    prompt: str
-    duration: int
-    numSteps: int
-
-class StableGenerationResponse(BaseModel):
-    generated_natural_url: str
-
-class PromptRefinementResponse(BaseModel):
-    tts_prompt: str
-    video_person_prompt: str
-    video_noperson_prompt: str
-    image_prompt: str
 
 # sync 모델 사용 안할 경우 영상 생성 Request
 class VideoPipelineRequest(BaseModel):
@@ -147,3 +130,13 @@ class TtsGenerateRequest(BaseModel):
 
 class TtsGenerateResponse(BaseModel):
     audio_url: str
+
+
+# 사용 안함 ---------------------------------------------------------
+class StableGenerationRequest(BaseModel):
+    prompt: str
+    duration: int
+    numSteps: int
+
+class StableGenerationResponse(BaseModel):
+    generated_natural_url: str
