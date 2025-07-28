@@ -23,7 +23,7 @@ async def read_tarot(count: int):
     reading = await run_in_threadpool(generate_reading, str(count), drawn)
     return {"cards": drawn, "reading": reading}
 
-# ✅ 전체 카드 목록 반환 (프론트에서 목록용으로 사용 가능)
+# ✅ 123전체 카드 목록 반환 (프론트에서 목록용으로 사용 가능)
 @router.get("/cards")
 async def get_all_tarot_cards():
     return {"cards": tarot_deck}
