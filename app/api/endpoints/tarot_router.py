@@ -1,8 +1,10 @@
 from fastapi import APIRouter
 import random
-from app.data.tarot_deck import tarot_deck  # ✅ 카드 정보 리스트 (이미 image 경로 포함됨)
+from app.data.tarot_deck import tarot_deck
+
 from app.services.tarot.tarot_service import generate_reading
 from fastapi.concurrency import run_in_threadpool
+from app.data.tarot_deck import TAROT_CARDS
 
 router = APIRouter(prefix="/tarot", tags=["tarot"])
 
@@ -11,7 +13,13 @@ router = APIRouter(prefix="/tarot", tags=["tarot"])
 async def draw_cards(count: int):
     if count < 1 or count > len(tarot_deck):
         return {"error": "Invalid count"}
+
     drawn = random.sample(tarot_deck, count)
+
+    # 카드에 이미지 경로 추가
+    for i, card in enumerate(drawn):
+        card["image"] = f"/cards/card_{i}.png"  # 이미지 경로 부여
+
     return {"cards": drawn}
 
 # ✅ 카드 n장 + 해석까지 요청 (POST)
