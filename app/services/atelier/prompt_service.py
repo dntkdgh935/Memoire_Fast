@@ -141,7 +141,6 @@ class PromptRefiner:
     - Clyde (2EiwWnXFnvU5JabPnv8n): veteran warrior‑like male US accent for action/game narration
     - Daniel (onwK4e9ZLuTAKqWW03F9): deep authoritative male UK accent for news/official announcements
     - Dave (CYw3kZ02Hs0563khs1Fj): young male Bristol/Essex UK accent for friendly branded content
-    - Domi (AZnzlk1XvdvE nXmlld): powerful clear young female US accent for strong brand messages/ads
     - Dorothy (ThT5KcBeYPX3keUQqHPh): gentle young female UK accent for children’s stories
     - Drew (29vD33N1CtxCmqQRPOHJ): balanced middle‑aged male US accent, versatile for news/narration
     - Emily (LcfcDJNUP1GQjkzn1xUU): calm clear young female US accent for meditation/relaxation content
