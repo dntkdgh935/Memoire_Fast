@@ -1,16 +1,14 @@
-# app/services/tarot/tarot_service.py
-
 from openai import OpenAI
 from app.core.config import settings
 
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
-def generate_reading(spread_type: str, cards: list[dict]) -> str:
+def generate_reading(spread_type: str, cards: list) -> str:
     """
     신비로운 마법사 스타일로 AI 타로 리딩 생성 (동기 방식)
     """
     # 카드 이름만 쉼표로 이어 붙이기
-    card_names = ", ".join([c["name"] for c in cards])
+    card_names = ", ".join([c.name for c in cards])  # ✅ 수정
 
     # 마법사 스타일 프롬프트
     prompt = f"""
@@ -34,8 +32,8 @@ def generate_reading(spread_type: str, cards: list[dict]) -> str:
             {"role": "system", "content": "너는 조용하고 신비로운 고대의 마법사다. 타로의 상징과 기운을 해석하여 말해준다."},
             {"role": "user", "content": prompt}
         ],
-        max_tokens=1200,  # ← 여기서 길이 제한 조절
-        temperature=0.9   # 약간 더 창의적인 말투 허용
+        max_tokens=1200,
+        temperature=0.9
     )
 
     return resp.choices[0].message.content.strip()
