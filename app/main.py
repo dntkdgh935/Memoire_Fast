@@ -12,11 +12,13 @@ from app.api.endpoints.tarot_router import router as tarot_router
 import os
 from fastapi.staticfiles import StaticFiles
 
+import logging
 
 
 
 
 
+logging.basicConfig(level=logging.WARNING)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
