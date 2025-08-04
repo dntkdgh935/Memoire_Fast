@@ -1,9 +1,7 @@
-import os
 import time
 import uuid
 import requests
 from app.core.config import settings
-from io import BytesIO
 import tempfile
 import shutil
 from pathlib import Path
@@ -11,11 +9,6 @@ from pathlib import Path
 HEADERS = {
     "Authorization": f"Bearer {settings.USEAPI_TOKEN}",
     "Content-Type":  "application/json"
-}
-
-FILE_HEADERS = {
-    "x-rapidapi-key": "a469bc4124msh2a54debc3d2f590p1360d6jsna25f53b5c11d",
-    "x-rapidapi-host": "runwayml-api.p.rapidapi.com"
 }
 
 def link_runway_account():
@@ -112,17 +105,12 @@ def upload_asset(src: bytes, name: str) -> str:
     asset_key = data.get("assetId")
     if not asset_key:
         raise RuntimeError(f"Asset 업로드 실패: {data}")
-    print(f"✅ Asset 업로드 완료: {asset_key}")
+    print(f"Asset 업로드 완료: {asset_key}")
     return asset_key
 
 def poll_lipsync_task(task_id: str,
                       timeout: int = 300,
                       interval: int = 5) -> str:
-    """
-    taskId가 SUCCEEDED 상태가 될 때까지 최대 timeout초 동안
-    interval초 간격으로 상태를 조회합니다.
-    성공 시 artifacts[0]['url'] 을 반환, 실패 시 예외를 던집니다.
-    """
     start = time.time()
     url   = f"https://api.useapi.net/v1/runwayml/tasks/{task_id}"
     while True:
@@ -144,8 +132,7 @@ def poll_lipsync_task(task_id: str,
             err = data.get("error") or data
             raise RuntimeError("Lip‑sync failed:", err)
 
-        # 아직 진행 중
-        print(f"🔄 상태 {status}. 다음 확인까지 {interval}s 대기")
+        print(f"상태 {status}. 다음 확인까지 {interval}s 대기")
         time.sleep(interval)
 
 def generate_lip_sync_video(image_url: str, audio_url: str) -> str:
@@ -167,20 +154,19 @@ def generate_lip_sync_video(image_url: str, audio_url: str) -> str:
         "audio_assetId": audio_asset
     }
 
-    print("🔁 립싱크 작업 생성 요청 중...")
+    print("립싱크 작업 생성 요청 중...")
     res = requests.post(
         "https://api.useapi.net/v1/runwayml/lipsync/create",
         headers=HEADERS,
         json=payload
     )
 
-    # 디버그용: 응답 상태와 본문을 먼저 찍습니다
-    print(f"💬 립싱크 응답 상태: {res.status_code}")
-    print(f"💬 립싱크 응답 본문: {res.text}")
+    print(f"립싱크 응답 상태: {res.status_code}")
+    print(f"립싱크 응답 본문: {res.text}")
 
     res.raise_for_status()
     task_id = res.json()["taskId"]
-    print("✅ 작업 생성됨. taskId:", task_id)
+    print("작업 생성. taskId:", task_id)
 
     print("⏳ Lip‑sync 완료 대기 중…")
     video_url = poll_lipsync_task(task_id, timeout=180, interval=5)

@@ -1,13 +1,9 @@
-# app/services/atelier/ffmpeg_service.py
-
-import os
 import uuid
 import shutil
 import subprocess
 import requests
 import tempfile
 from pathlib import Path
-from app.core.config import settings
 
 
 
@@ -17,21 +13,16 @@ def _download_if_url(path_or_url: str, target_path: Path) -> Path:
     # 1) localhost URL일 경우 → 로컬 경로로 변환
     if path_or_url.startswith("http://localhost:8000"):
         path_or_url = path_or_url.replace("http://localhost:8000/upload_files", "")
-        print(f"[➡️] localhost URL → 로컬 파일 간주: {path_or_url}")
 
-    # 2) /로 시작하면 upload_files 기반으로 로컬 경로 매핑
     if path_or_url.startswith("/"):
-        # 앞에 upload_files 붙이기 → C:/upload_files/memory_video/... 등
         full_path = Path("C:/upload_files") / path_or_url.lstrip("/")
         if full_path.exists():
-            print(f"[➡️] 로컬 파일 사용: {full_path}")
             return full_path
         else:
             raise FileNotFoundError(f"로컬 경로가 존재하지 않음: {full_path}")
 
     # 3) 외부 URL인 경우 다운로드
     if path_or_url.startswith("http://") or path_or_url.startswith("https://"):
-        print(f"[🌐] 외부 URL 다운로드: {path_or_url}")
         with requests.get(path_or_url, stream=True) as r:
             r.raise_for_status()
             with open(target_path, 'wb') as f:
@@ -50,7 +41,7 @@ def _download_if_url(path_or_url: str, target_path: Path) -> Path:
 def merge_assets(video_url: str, tts_path: str) -> str:
     print("🛠 merge_assets 시작")
     tmp_dir = Path(tempfile.mkdtemp())
-    print(f"[📂] 임시 디렉토리 생성됨: {tmp_dir}")
+    print(f"임시 디렉토리 생성됨: {tmp_dir}")
 
     try:
         video_file = _download_if_url(video_url, tmp_dir / "video.mp4")
@@ -58,11 +49,11 @@ def merge_assets(video_url: str, tts_path: str) -> str:
 
         output_dir = Path("C:/upload_files/memory_video")
         output_dir.mkdir(parents=True, exist_ok=True)
-        print(f"[📁] 출력 디렉토리 준비됨: {output_dir}")
+        print(f"출력 디렉토리 준비됨: {output_dir}")
 
         out_name = f"{uuid.uuid4().hex}.mp4"
         output_file = output_dir / out_name
-        print(f"[📝] 출력 파일명: {output_file}")
+        print(f"출력 파일명: {output_file}")
 
         ffmpeg_path = r"C:\ffmpeg-7.1.1-essentials_build\ffmpeg-7.1.1-essentials_build\bin\ffmpeg.exe"
 
@@ -71,29 +62,29 @@ def merge_assets(video_url: str, tts_path: str) -> str:
             "-y",
             "-i", str(video_file).replace("\\", "/"),
             "-i", str(tts_file).replace("\\", "/"),
-            "-c:v", "copy",
-            "-c:a", "aac",
             "-map", "0:v",
             "-map", "1:a",
+            "-c:v", "copy",
+            "-c:a", "aac",
             "-shortest",
             str(output_file).replace("\\", "/")
         ]
 
-        print("[🎬] FFmpeg 명령 실행 중...")
+        print("FFmpeg 명령 실행 중...")
         print(" ".join(map(str, cmd)))
         subprocess.run(cmd, check=True)
-        print("[✅] FFmpeg 실행 완료")
+        print("FFmpeg 실행 완료")
 
         return f"/memory_video/{out_name}"
 
     except subprocess.CalledProcessError as e:
-        print(f"[❌] FFmpeg 실행 오류: {e}")
+        print(f"FFmpeg 실행 오류: {e}")
         raise
 
     except Exception as e:
-        print(f"[🔥] 예외 발생: {e}")
+        print(f"예외 발생: {e}")
         raise
 
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
-        print(f"[🧹] 임시 디렉토리 삭제 완료: {tmp_dir}")
+        print(f"임시 디렉토리 삭제 완료: {tmp_dir}")

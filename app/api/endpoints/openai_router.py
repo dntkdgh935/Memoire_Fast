@@ -21,7 +21,7 @@ async def generate_image_prompt(image_raw: str = Form(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"이미지 프롬프트 정제 실패: {e}")
 
-# 3. TTS(음성 합성) 프롬프트
+# TTS(음성 합성) 프롬프트
 @router.post("/generate-tts-prompt")
 async def generate_tts_prompt(tts_raw: str = Form(...)):
     try:
@@ -41,15 +41,15 @@ async def generate_video_background_prompt(video_noperson_raw: str = Form(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"비디오(배경) 프롬프트 정제 실패: {e}")
 
-# 자연음 생성 부분
-@router.post("/generate-sound-prompt")
-async def generate_sound_prompt(image_raw: str = Form(...)):
-    try:
-        prompt = _refiner.generate_nature_sound_prompt(image_raw)
-        print("generated sound prompt", prompt)
-        return {"prompt": prompt}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"자연음 프롬프트 생성 실패: {e}")
+# # 자연음 생성 부분
+# @router.post("/generate-sound-prompt")
+# async def generate_sound_prompt(image_raw: str = Form(...)):
+#     try:
+#         prompt = _refiner.generate_nature_sound_prompt(image_raw)
+#         print("generated sound prompt", prompt)
+#         return {"prompt": prompt}
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"자연음 프롬프트 생성 실패: {e}")
 
 # eleven 프롬프트 생성 부분
 @router.post(

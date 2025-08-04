@@ -9,7 +9,6 @@ import app.api.endpoints.text2image_router as image_router_module
 from contextlib import asynccontextmanager
 
 from app.api.endpoints.tarot_router import router as tarot_router
-import os
 from fastapi.staticfiles import StaticFiles
 
 import logging
@@ -63,11 +62,5 @@ app.mount(
     StaticFiles(directory="C:/upload_files/tts"),
     name="tts"
 )
-@app.get("/")
-async def ping():
-    return {"message": "pong"}
 
-# .\.venv\Scripts\Activate.ps1 터미널에서 환경 설정한 곳으로 설정
-# uvicorn app.main:app --reload 라우터 확인
-# (.venv) PS D:\python_workspace\FastAPI> $env:PYTHONPATH="D:\python_workspace\FastAPI"
-# (.venv) PS D:\python_workspace\FastAPI> python app/main.py
+

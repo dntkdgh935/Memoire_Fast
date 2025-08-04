@@ -1,5 +1,3 @@
-# app/services/atelier/prompt_refiner.py
-import os
 import time
 from openai import OpenAI, RateLimitError, OpenAIError
 from app.core.config import settings
@@ -30,7 +28,7 @@ class PromptRefiner:
                 backoff *= 2
             except OpenAIError as e:
                 raise e
-        # 모든 재시도 실패 시
+
         raise RateLimitError("Exceeded max retries in PromptRefiner._chat_refine")
 
 
@@ -51,47 +49,24 @@ class PromptRefiner:
         )
         return self._chat_refine(system, raw_text, max_tokens=150)
 
-
     def refine_video_background_prompt(self, raw_desc: str) -> str:
         system = (
-            "You are a professional prompt engineer for image generation APIs. "
-            "Rewrite the user's description into a concise, vivid English prompt optimized for DALL·E (gpt-image-1). "
-            "Start your prompt with 'In the mood of the original image,' and ensure that the overall feeling and atmosphere are preserved. "
-            "Explicitly avoid any duplicated, distorted, or extra faces, heads, limbs, or characters. "
-            "Only depict a natural, realistic scene based on the user's intent. "
+            "You are a professional prompt engineer for RunwayML video generation models."
+            "Rewrite the user's description into a concise, vivid English prompt optimized for generating a coherent moving scene."
+            "Explicitly avoid any duplicated, distorted, or extra faces, heads, limbs, characters, text, logos, or watermarks."
             "Respond with the prompt only."
         )
         return self._chat_refine(system, raw_desc)
 
-    def generate_nature_sound_prompt(self,image_description):
-        system = (
-            "As an expert, write a clear and detailed prompt for generating natural ambient sounds, based on the provided image description."
-            "The prompt will be used by a sound generation AI, so make sure to describe the features and qualities of the sound thoroughly."
-        )
-        user_prompt = f"Image description: {image_description}\n\nPrompt for generating natural ambient sounds:"
+    # def generate_nature_sound_prompt(self,image_description):
+    #     system = (
+    #         "As an expert, write a clear and detailed prompt for generating natural ambient sounds, based on the provided image description."
+    #         "The prompt will be used by a sound generation AI, so make sure to describe the features and qualities of the sound thoroughly."
+    #     )
+    #     user_prompt = f"Image description: {image_description}\n\nPrompt for generating natural ambient sounds:"
+    #
+    #     return self._chat_refine(system, user_prompt, max_tokens=200)
 
-        return self._chat_refine(system, user_prompt, max_tokens=200)
-
-    def _chat_refine(self, system_prompt: str, user_input: str, max_tokens: int = 60) -> str:
-        backoff = 0.5
-        for _ in range(6):
-            try:
-                resp = self.client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_input},
-                    ],
-                    temperature=0.2,
-                    max_tokens=max_tokens
-                )
-                return resp.choices[0].message.content.strip()
-            except RateLimitError:
-                time.sleep(backoff)
-                backoff *= 2
-            except OpenAIError as e:
-                raise e
-        raise RateLimitError("Exceeded max retries in PromptRefiner._chat_refine")
 
     def refine_tts_config(self, script: str, voice_gender: str) -> dict:
 
