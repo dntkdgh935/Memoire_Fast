@@ -2,13 +2,6 @@ from pydantic import BaseModel, HttpUrl
 from typing import Optional, Literal
 
 
-class LipSyncRequest(BaseModel):
-    image_url: HttpUrl
-    audio_url: HttpUrl
-
-class LipSyncResponse(BaseModel):
-    video_url: str
-
 class TextGenerationRequest(BaseModel):
     content: str
     title: str
@@ -57,24 +50,6 @@ class ImageResultDto(BaseModel):
     collectionId: int
     memoryOrder: int
 
-
-class RunwayGenerationRequest(BaseModel):
-    image_url: str
-    tts_url: str
-
-class RunwayGenerationResponse(BaseModel):
-    video_url: str
-
-
-
-
-class OpenaiGenerationRequest(BaseModel):
-    prompt: str
-
-class OpenaiGenerationResponse(BaseModel):
-    generated_text: str
-
-
 class FfmpegGenerationRequest(BaseModel):
     video_url: str
     tts_url: str
@@ -83,14 +58,15 @@ class FfmpegGenerationResponse(BaseModel):
     video_url: str
 
 
-class VertexGenerationRequest(BaseModel):
+class DallEGenerationRequest(BaseModel):
     prompt: str
     image_url: str
 
-class VertexGenerationResponse(BaseModel):
+class DallEGenerationResponse(BaseModel):
     generated_image_url: str
 
-# sync 모델 사용 안할 경우 영상 생성 Request
+
+# sync 모델 사용 안할 경우 영상 생성
 class VideoPipelineRequest(BaseModel):
     image_url: str
     prompt: Optional[str] = None
@@ -99,15 +75,6 @@ class VideoPipelineRequest(BaseModel):
 class VideoPipelineResponse(BaseModel):
     video_url: str
 
-class MediaPipelineRequest(BaseModel):
-    raw_video_url: str
-    image_url: str
-    tts_url: Optional[str] = None
-    duration: int = 15
-    num_steps: int = 25
-
-class MediaPipelineResponse(BaseModel):
-    final_video_url: str
 
 # tts 스크립트 호출
 class TtsConfigRequest(BaseModel):
@@ -120,7 +87,7 @@ class TtsConfigResponse(BaseModel):
     stability: float
     similarity_boost: float
 
-# elevenlabs 부분
+# elevenlabs
 class TtsGenerateRequest(BaseModel):
     speech: str
     voice_id: str
@@ -131,12 +98,18 @@ class TtsGenerateRequest(BaseModel):
 class TtsGenerateResponse(BaseModel):
     audio_url: str
 
+class LipSyncRequest(BaseModel):
+    image_url: HttpUrl
+    audio_url: HttpUrl
 
-# 사용 안함 ---------------------------------------------------------
-class StableGenerationRequest(BaseModel):
-    prompt: str
-    duration: int
-    numSteps: int
+class LipSyncResponse(BaseModel):
+    video_url: str
 
-class StableGenerationResponse(BaseModel):
-    generated_natural_url: str
+# stable 사용 안함 ---------------------------------------------------------
+# class StableGenerationRequest(BaseModel):
+#     prompt: str
+#     duration: int
+#     numSteps: int
+#
+# class StableGenerationResponse(BaseModel):
+#     generated_natural_url: str

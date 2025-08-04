@@ -1,4 +1,3 @@
-# === api/endpoints/non_sync_video_router.py ===
 import os
 import time
 import requests
@@ -31,7 +30,7 @@ async def non_sync_video_pipeline(
     req: VideoPipelineRequest = Body(...)
 ):
     print("request : ", req)
-    # 프롬프트 정제 (GPT)
+    # 프롬프트 정제
     try:
         refined_prompt = _refiner.refine_video_background_prompt(req.prompt)
     except Exception as e:
@@ -44,7 +43,7 @@ async def non_sync_video_pipeline(
     if not os.path.isfile(image_path):
         raise HTTPException(status_code=400, detail=f"Image file not found: {image_path}")
 
-    # Runway로 영상 생성
+    # 영상 생성
     try:
         best_ratio = get_best_ratio(image_path)
         print("best_ratio:", best_ratio)

@@ -1,5 +1,3 @@
-# app/services/atelier/vertex_service.py
-
 from io import BytesIO
 import uuid
 import openai
@@ -37,7 +35,6 @@ def edit_with_gpt_image_base64(
 
     print(f"[im2im] image size: {img.size}")
 
-    # 원본 + 전체 흰색 마스크 준비
     mask = Image.new("RGBA", img.size, (255, 255, 255, 255))
     tmp_img, tmp_mask = Path("tmp_img.png"), Path("tmp_mask.png")
     img.save(tmp_img); mask.save(tmp_mask)
@@ -48,7 +45,6 @@ def edit_with_gpt_image_base64(
     print(f"[im2im] refined prompt: {refined!r}")
 
 
-    # edit 호출 (response_format 없이)
     with tmp_img.open("rb") as i, tmp_mask.open("rb") as m:
         resp = openai.images.edit(
             model=model,
@@ -70,12 +66,6 @@ def edit_with_gpt_image_base64(
         out = f"{uuid.uuid4().hex}.png"
         local_path = output_dir / out
         local_path.write_bytes(img_bytes)
-
-        # 용량 검사
-        size = local_path.stat().st_size
-        if size > MAX_SIZE_BYTES:
-            print(f"[im2im] ❌ 파일 {out}이 200MB 초과: {(size / 1024 / 1024):.2f}MB")
-            raise ValueError(f"생성된 이미지가 200MB를 초과했습니다: {(size / 1024 / 1024):.2f}MB")
 
         out_urls.append(f"/upload_files/memory_img/{out}")
         print(f"[im2im] wrote output[{idx}]: {local_path}")

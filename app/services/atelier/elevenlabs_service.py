@@ -1,9 +1,7 @@
-from elevenlabs import ElevenLabs
-from app.core.config import settings  # .env에서 ELEVENLABS_API_KEY 불러옴
 import uuid
-import os
 from pathlib import Path
-
+from elevenlabs import ElevenLabs
+from app.core.config import settings
 
 
 def generate_tts(speech: str, voice_id: str, model_id: str, stability: float, similarity_boost: float) -> str:
